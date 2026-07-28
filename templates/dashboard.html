@@ -1,0 +1,1686 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kanban Board - Sistema Helpdesk</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <style>
+        /* Banner de Atualização */
+        #updateBanner {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #5865f2;
+            color: #fff;
+            padding: 12px;
+            text-align: center;
+            z-index: 10000;
+            font-size: 14px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            font-weight: 600;
+        }
+
+        .btn-update {
+            background: #fff;
+            color: #5865f2;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-weight: 700;
+            margin-left: 15px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-update:hover {
+            background: #f3f4f6;
+            transform: scale(1.05);
+        }
+
+        .btn-update:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        /* Versão no Rodapé (Super Visível) */
+        .ver-badge {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 12px;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 4px 10px;
+            border-radius: 6px;
+            z-index: 10000;
+            font-weight: 700;
+            pointer-events: none;
+            font-family: sans-serif;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="updateBanner">
+        🚀 Uma nova versão do HelpDesk está disponível!
+        <button class="btn-update" id="updateBtn">Atualizar Agora</button>
+    </div>
+    <div class="header">
+        <h1>📋 Kanban Board - Sistema Helpdesk</h1>
+        <div class="user-info">
+            <div class="user-avatar">U</div>
+            <div>
+                <div>Bem-vindo, <strong id="username">Usuário</strong></div>
+                <div style="font-size: 12px;">Kanban Board</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="actions">
+        <button class="btn-success" onclick="abrirModalNovoTicket()">➕ Novo Ticket</button>
+        <button onclick="carregarTickets()">🔄 Atualizar</button>
+        <button class="btn-link btn-secondary" onclick="exportarExcel()">📊 Exportar Excel</button>
+        <a href="/estoque" class="btn-link btn-secondary">📦 Estoque TI</a>
+        <a href="/logout" class="btn-link btn-secondary">🚪 Logout</a>
+    </div>
+
+    <!-- Filtros de Pesquisa -->
+    <div class="search-filters">
+        <div class="filter-group">
+            <input type="text" id="searchInput" class="search-input"
+                placeholder="🔍 Buscar por título, descrição, cliente...">
+        </div>
+        <div class="filter-row">
+            <select id="filterPrioridade" class="filter-select">
+                <option value="">Todas Prioridades</option>
+                <option value="alta">Alta</option>
+                <option value="media">Média</option>
+                <option value="baixa">Baixa</option>
+            </select>
+            <select id="filterCategoria" class="filter-select">
+                <option value="">Todas Categorias</option>
+                <option value="Office">Office</option>
+                <option value="Dúvida">Dúvida</option>
+                <option value="Thunderbird">Thunderbird</option>
+                <option value="Design">Design</option>
+                <option value="ERP Corporativo">ERP Corporativo</option>
+                <option value="AutoDesk">AutoDesk</option>
+                <option value="Hardware">Hardware</option>
+                <option value="Software">Software</option>
+                <option value="Cameras">Cameras</option>
+                <option value="Rede">Rede</option>
+                <option value="Estoque TI">Estoque TI</option>
+            </select>
+            <input type="date" id="filterDataInicio" class="filter-select">
+            <input type="date" id="filterDataFim" class="filter-select">
+            <button onclick="limparFiltros()" class="btn-secondary btn-small">🗑️ Limpar Filtros</button>
+        </div>
+    </div>
+
+    <div id="messageArea"></div>
+
+    <div class="kanban-board" id="kanbanBoard">
+        <!-- Coluna Aberto -->
+        <div class="kanban-column status-aberto" data-status="Aberto">
+            <div class="column-header">
+                <div class="column-title">🔴 Aberto</div>
+                <div class="column-actions">
+                    <button class="btn-maximize" onclick="maximizarColuna('Aberto')"
+                        title="Maximizar visualização">⛶</button>
+                    <div class="column-count" id="count-aberto">0</div>
+                </div>
+            </div>
+            <div class="ticket-list" id="tickets-aberto"></div>
+        </div>
+
+        <!-- Coluna Em Andamento -->
+        <div class="kanban-column status-em-andamento" data-status="Em Andamento">
+            <div class="column-header">
+                <div class="column-title">🟡 Em Andamento</div>
+                <div class="column-actions">
+                    <button class="btn-maximize" onclick="maximizarColuna('Em Andamento')"
+                        title="Maximizar visualização">⛶</button>
+                    <div class="column-count" id="count-em-andamento">0</div>
+                </div>
+            </div>
+            <div class="ticket-list" id="tickets-em-andamento"></div>
+        </div>
+
+        <!-- Coluna Aguardando -->
+        <div class="kanban-column status-aguardando" data-status="Aguardando">
+            <div class="column-header">
+                <div class="column-title">🔵 Aguardando</div>
+                <div class="column-actions">
+                    <button class="btn-maximize" onclick="maximizarColuna('Aguardando')"
+                        title="Maximizar visualização">⛶</button>
+                    <div class="column-count" id="count-aguardando">0</div>
+                </div>
+            </div>
+            <div class="ticket-list" id="tickets-aguardando"></div>
+        </div>
+
+        <!-- Coluna Fechado -->
+        <div class="kanban-column status-fechado" data-status="Fechado">
+            <div class="column-header">
+                <div class="column-title">🟢 Fechado</div>
+                <div class="column-actions">
+                    <button class="btn-maximize" onclick="maximizarColuna('Fechado')"
+                        title="Maximizar visualização">⛶</button>
+                    <div class="column-count" id="count-fechado">0</div>
+                </div>
+            </div>
+            <div class="ticket-list" id="tickets-fechado"></div>
+        </div>
+    </div>
+
+    <!-- Modal Novo Ticket -->
+    <div id="modalNovoTicket" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">➕ Novo Ticket</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="formNovoTicket">
+                    <div class="form-group">
+                        <label class="form-label">Nome do Cliente</label>
+                        <input type="text" class="form-control" id="nome" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Título do Ticket</label>
+                        <input type="text" class="form-control" id="titulo" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Descrição</label>
+                        <textarea class="form-control" id="descricao" required></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Prioridade</label>
+                            <select class="form-control" id="prioridade">
+                                <option value="baixa">Baixa</option>
+                                <option value="media" selected>Média</option>
+                                <option value="alta">Alta</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Categoria</label>
+                            <select class="form-control" id="categoria" onchange="toggleContactFields()">
+                                <option value="Office">Office</option>
+                                <option value="Dúvida">Dúvida</option>
+                                <option value="Thunderbird">Thunderbird</option>
+                                <option value="Design">Design</option>
+                                <option value="ERP Corporativo">ERP Corporativo</option>
+                                <option value="AutoDesk">AutoDesk</option>
+                                <option value="Hardware">Hardware</option>
+                                <option value="Software">Software</option>
+                                <option value="Cameras">Cameras</option>
+                                <option value="Rede">Rede</option>
+                                <option value="Estoque TI">Estoque TI</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Campos adicionais para Estoque TI -->
+                    <div id="estoqueTiFields" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label">Requisitante</label>
+                            <input type="text" class="form-control" id="requisitante"
+                                placeholder="Nome do requisitante">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Produto</label>
+                            <input type="text" class="form-control" id="produto" placeholder="Produto/Item">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">NFe (nome do arquivo PDF)</label>
+                            <input type="text" class="form-control" id="nfeArquivo" placeholder="ex: NF-12345.pdf">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Tempo Estimado</label>
+                            <select class="form-control" id="tempoEstimado">
+                                <option value="0.5h">30 minutos</option>
+                                <option value="1h">1 hora</option>
+                                <option value="2h">2 horas</option>
+                                <option value="4h">4 horas</option>
+                                <option value="1d">1 dia</option>
+                                <option value="2d">2 dias</option>
+                                <option value="5d">5 dias</option>
+                                <option value="Indeterminado">Indeterminado</option>
+                            </select>
+
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary"
+                            onclick="fecharModal('modalNovoTicket')">Cancelar</button>
+                        <button type="submit" class="btn-success">Criar Ticket</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Visualização Maximizada -->
+    <div id="modalMaximizado" class="modal modal-maximizado">
+        <div class="modal-content modal-maximizado-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="tituloMaximizado">📋 Visualização Expandida</h2>
+                <span class="close" onclick="fecharModal('modalMaximizado')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="tickets-maximizado-grid" id="ticketsMaximizadoGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Ticket -->
+    <div id="modalEditarTicket" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">✏️ Editar Ticket</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarTicket">
+                    <input type="hidden" id="editTicketId">
+
+                    <div class="form-group">
+                        <label class="form-label">Título</label>
+                        <input type="text" class="form-control" id="editTitulo" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Descrição</label>
+                        <textarea class="form-control" id="editDescricao" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Checklist</label>
+                        <div id="checklistItemsContainer" class="checklist-items-container"></div>
+                        <div class="novo-item-checklist-group">
+                            <input type="text" id="novoItemChecklistTexto" class="form-control"
+                                placeholder="Adicionar item...">
+                            <button type="button" class="btn-primary" onclick="adicionarItemChecklist()">➕</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Comentários</label>
+                        <div id="editComentariosLista" class="comentarios-lista"></div>
+                        <div class="novo-comentario-group">
+                            <input type="text" id="novoComentarioTexto" class="form-control"
+                                placeholder="Escreva um novo comentário...">
+                            <button type="button" class="btn-primary" onclick="salvarNovoComentario()">Enviar</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="editResolucaoGroup" style="display: none;">
+                        <label class="form-label">Resolução</label>
+                        <textarea class="form-control" id="editResolucao"
+                            placeholder="Descreva como o problema foi resolvido..."></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Status</label>
+                            <select class="form-control" id="editStatus" onchange="toggleResolucaoField()">
+                                <option value="Aberto">Aberto</option>
+                                <option value="Em Andamento">Em Andamento</option>
+                                <option value="Aguardando">Aguardando</option>
+                                <option value="Fechado">Fechado</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Prioridade</label>
+                            <select class="form-control" id="editPrioridade">
+                                <option value="baixa">Baixa</option>
+                                <option value="media">Média</option>
+                                <option value="alta">Alta</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Responsável</label>
+                            <input type="text" class="form-control" id="editResponsavel">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Categoria</label>
+                            <select class="form-control" id="editCategoria" onchange="toggleEditEstoqueFields()">
+                                <option value="Office">Office</option>
+                                <option value="Dúvida">Dúvida</option>
+                                <option value="Thunderbird">Thunderbird</option>
+                                <option value="Design">Design</option>
+                                <option value="ERP Corporativo">ERP Corporativo</option>
+                                <option value="AutoDesk">AutoDesk</option>
+                                <option value="Hardware">Hardware</option>
+                                <option value="Software">Software</option>
+                                <option value="Cameras">Cameras</option>
+                                <option value="Rede">Rede</option>
+                                <option value="Estoque TI">Estoque TI</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Campos adicionais (Edição) para Estoque TI -->
+                    <div id="editEstoqueTiFields" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label">Requisitante</label>
+                            <input type="text" class="form-control" id="editRequisitante"
+                                placeholder="Nome do requisitante">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Produto</label>
+                            <input type="text" class="form-control" id="editProduto" placeholder="Produto/Item">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">NFe (nome do arquivo PDF)</label>
+                            <input type="text" class="form-control" id="editNfeArquivo" placeholder="ex: NF-12345.pdf">
+                        </div>
+                    </div>
+                    <div id="estoqueTiFields" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label">Requisitante</label>
+                            <input type="text" class="form-control" id="requisitante"
+                                placeholder="Nome do requisitante">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Produto</label>
+                            <input type="text" class="form-control" id="produto" placeholder="Produto/Item">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">NFe (nome do arquivo PDF)</label>
+                            <input type="text" class="form-control" id="nfeArquivo" placeholder="ex: NF-12345.pdf">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tempo Estimado</label>
+                        <select class="form-control" id="editTempoEstimado">
+                            <option value="0.5h">30 minutos</option>
+                            <option value="1h">1 hora</option>
+                            <option value="2h">2 horas</option>
+                            <option value="4h">4 horas</option>
+                            <option value="1d">1 dia</option>
+                            <option value="2d">2 dias</option>
+                            <option value="5d">5 dias</option>
+                            <option value="Indeterminado">Indeterminado</option>
+                        </select>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary"
+                            onclick="fecharModal('modalEditarTicket')">Cancelar</button>
+                        <button type="submit" class="btn-success">Salvar Alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Estado global
+        let tickets = [];
+        let draggedTicket = null;
+        const ordemPrioridade = { alta: 1, media: 2, baixa: 3 };
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function () {
+            setupDragAndDrop();
+            setupModals();
+            setupFilters();
+            carregarTickets();
+            carregarUsuario();
+            checkVersion();
+        });
+
+        // ── VERSÃO E BANNER (auto-detect) ────────────────────────────────
+        async function checkVersion() {
+            try {
+                const res = await fetch('/api/app-version');
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!data.url) return;
+
+                const installedVersion = window.electronAPI ? window.electronAPI.getAppVersion() : '1.0.0';
+                // (Opcional: Adicionar label de versão no dashboard se desejar)
+
+                const lastSeen = localStorage.getItem('hd_last_version') || '';
+                if (data.version && data.version !== installedVersion && data.version !== lastSeen) {
+                    const banner = document.getElementById('updateBanner');
+                    const btn = document.getElementById('updateBtn');
+                    if (banner && btn) {
+                        banner.style.display = 'block';
+                        btn.onclick = () => {
+                            if (window.electronAPI) {
+                                btn.disabled = true;
+                                btn.textContent = "Preparando...";
+                                window.electronAPI.startUpdate(encodeURI(data.url));
+                                window.electronAPI.onUpdateProgress((p) => {
+                                    const pct = p < 0
+                                        ? `${(Math.abs(p) / 1048576).toFixed(1)} MB`
+                                        : `${Math.round(p * 100)}%`;
+                                    btn.textContent = `Baixando: ${pct}...`;
+                                    if (p >= 1) btn.textContent = "Finalizando download...";
+                                });
+                                window.electronAPI.onUpdateError((msg) => {
+                                    btn.disabled = false;
+                                    btn.textContent = "Erro: " + msg;
+                                    setTimeout(() => { btn.textContent = "Tentar Novamente"; btn.disabled = false; }, 3000);
+                                });
+                            } else {
+                                localStorage.setItem('hd_last_version', data.version);
+                                window.location.href = data.url;
+                            }
+                        };
+                    }
+                }
+            } catch (e) { console.log("Erro check version:", e); }
+        }
+
+
+        // Configurar filtros
+        function setupFilters() {
+            const searchInput = document.getElementById('searchInput');
+            const filterPrioridade = document.getElementById('filterPrioridade');
+            const filterCategoria = document.getElementById('filterCategoria');
+            const filterDataInicio = document.getElementById('filterDataInicio');
+            const filterDataFim = document.getElementById('filterDataFim');
+
+            searchInput.addEventListener('input', aplicarFiltros);
+            filterPrioridade.addEventListener('change', aplicarFiltros);
+            filterCategoria.addEventListener('change', aplicarFiltros);
+            filterDataInicio.addEventListener('change', aplicarFiltros);
+            filterDataFim.addEventListener('change', aplicarFiltros);
+        }
+
+        // Aplicar filtros
+        function aplicarFiltros() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const prioridade = document.getElementById('filterPrioridade').value;
+            const categoria = document.getElementById('filterCategoria').value;
+            const dataInicio = document.getElementById('filterDataInicio').value;
+            const dataFim = document.getElementById('filterDataFim').value;
+
+            const ticketItems = document.querySelectorAll('.ticket-item');
+
+            ticketItems.forEach(ticket => {
+                const titulo = ticket.querySelector('.ticket-title')?.textContent.toLowerCase() || '';
+                const descricao = ticket.querySelector('.ticket-description')?.textContent.toLowerCase() || '';
+                const ticketId = ticket.querySelector('.ticket-id')?.textContent.toLowerCase() || '';
+                const ticketPrioridade = ticket.dataset.prioridade || '';
+                const ticketCategoria = ticket.dataset.categoria || '';
+                const ticketData = ticket.dataset.data || '';
+
+                let showTicket = true;
+
+                // Filtro de busca
+                if (searchTerm && !titulo.includes(searchTerm) && !descricao.includes(searchTerm) && !ticketId.includes(searchTerm)) {
+                    showTicket = false;
+                }
+
+                // Filtro de prioridade
+                if (prioridade && ticketPrioridade !== prioridade) {
+                    showTicket = false;
+                }
+
+                // Filtro de categoria
+                if (categoria && ticketCategoria !== categoria) {
+                    showTicket = false;
+                }
+
+                // Filtro de data
+                if (dataInicio && ticketData < dataInicio) {
+                    showTicket = false;
+                }
+                if (dataFim && ticketData > dataFim) {
+                    showTicket = false;
+                }
+
+                ticket.style.display = showTicket ? 'block' : 'none';
+            });
+
+            atualizarContadores();
+        }
+
+        // Limpar filtros
+        function limparFiltros() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('filterPrioridade').value = '';
+            document.getElementById('filterCategoria').value = '';
+            document.getElementById('filterDataInicio').value = '';
+            document.getElementById('filterDataFim').value = '';
+            aplicarFiltros();
+        }
+
+        function formatarTimestamp(ts) {
+            if (!ts) return '';
+
+            const date = new Date(ts);
+            return date.toLocaleString('pt-BR', {
+                timeZone: 'America/Sao_Paulo',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+        }
+
+        function toggleContactFields() {
+            const categoria = document.getElementById('categoria').value;
+            const contactFields = document.getElementById('contactFields');
+            const estoqueFields = document.getElementById('estoqueTiFields');
+
+            if (categoria === 'Estoque TI') {
+                if (contactFields) contactFields.style.display = 'none';
+                if (estoqueFields) estoqueFields.style.display = 'block';
+            } else {
+                if (contactFields) contactFields.style.display = 'flex';
+                if (estoqueFields) estoqueFields.style.display = 'none';
+            }
+        }
+
+        function toggleResolucaoField() {
+            const status = document.getElementById('editStatus').value;
+            const resolucaoGroup = document.getElementById('editResolucaoGroup');
+
+            if (status === 'Fechado') {
+                resolucaoGroup.style.display = 'block';
+                document.getElementById('editResolucao').required = true;
+            } else {
+                resolucaoGroup.style.display = 'none';
+                document.getElementById('editResolucao').required = false;
+            }
+        }
+
+        function toggleEditEstoqueFields() {
+            const categoria = document.getElementById('editCategoria').value;
+            const estoqueFields = document.getElementById('editEstoqueTiFields');
+            if (!estoqueFields) return;
+            if (categoria === 'Estoque TI') {
+                estoqueFields.style.display = 'block';
+            } else {
+                estoqueFields.style.display = 'none';
+            }
+        }
+
+        // Carrega usuário logado
+        async function carregarUsuario() {
+            try {
+                const response = await fetch('/usuario');
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('username').textContent = data.usuario;
+                    document.querySelector('.user-avatar').textContent = data.usuario[0].toUpperCase();
+                }
+            } catch (error) {
+                console.error('Erro ao carregar usuário:', error);
+            }
+        }
+
+        // Carrega tickets
+        async function carregarTickets() {
+            try {
+                showMessage('🔄 Carregando tickets...', 'info');
+
+                const response = await fetch('/api/tickets/todos');
+
+                if (response.ok) {
+                    tickets = await response.json();
+                    renderizarKanban();
+                    showMessage('✅ Tickets carregados com sucesso', 'success');
+                } else {
+                    throw new Error('Erro ao carregar tickets');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                showMessage('❌ Erro ao carregar tickets', 'error');
+            }
+        }
+
+        // Renderiza o Kanban
+        function renderizarKanban() {
+            const statusList = ['Aberto', 'Em Andamento', 'Aguardando', 'Fechado'];
+            const ordemPrioridade = { alta: 1, media: 2, baixa: 3 };
+            statusList.forEach(status => {
+                const ticketsDoStatus = tickets
+                    .filter(ticket => ticket.status === status)
+                    .sort((a, b) => ordemPrioridade[a.prioridade] - ordemPrioridade[b.prioridade]);
+                const container = document.getElementById(`tickets-${status.toLowerCase().replace(' ', '-')}`);
+                const countElement = document.getElementById(`count-${status.toLowerCase().replace(' ', '-')}`);
+
+                // Atualiza contador
+                countElement.textContent = ticketsDoStatus.length;
+
+                // Renderiza tickets
+                container.innerHTML = ticketsDoStatus.map(ticket => createTicketHTML(ticket)).join('');
+
+                // Adiciona event listeners para drag
+                container.querySelectorAll('.ticket-item').forEach(ticketElement => {
+                    setupTicketDrag(ticketElement);
+                });
+            });
+
+            // Aplica filtros após renderizar
+            aplicarFiltros();
+        }
+
+        // Cria HTML do ticket
+        function createTicketHTML(ticket) {
+            const isFechado = ticket.status === 'Fechado';
+            const tempoInfo = isFechado ?
+                `<div class="ticket-time-info">
+                    <small>Estimado: ${ticket.tempoEstimado || 'N/A'} | Gasto: ${ticket.tempoGasto || 'N/A'}</small>
+                </div>` : '';
+
+            const resolucaoInfo = isFechado && ticket.resolucao ?
+                `<div class="ticket-resolution">
+                    <strong>Resolução:</strong> ${ticket.resolucao.substring(0, 100)}${ticket.resolucao.length > 100 ? '...' : ''}
+                </div>` : '';
+
+            // Checklist do ticket (Melhorado para ser mais interativo e ocultar quando vazio)
+            let checklistInfo = '';
+            if (ticket.checklist && ticket.checklist.trim() !== "" && ticket.checklist !== "[]") {
+                try {
+                    const checklistItems = JSON.parse(ticket.checklist);
+                    if (Array.isArray(checklistItems) && checklistItems.length > 0) {
+                        const completados = checklistItems.filter(i => i.done).length;
+                        const porcentagem = Math.round((completados / checklistItems.length) * 100);
+
+                        checklistInfo = `
+                            <div class="ticket-checklist">
+                                <strong>📋 Checklist (${completados}/${checklistItems.length})</strong>
+                                <div class="checklist-progress">
+                                    <div class="checklist-progress-bar" style="width: ${porcentagem}%"></div>
+                                </div>
+                                <div class="checklist-summary">
+                                    ${checklistItems.map(i => `<div class="item-summary ${i.done ? 'done' : ''}">${i.text}</div>`).slice(0, 3).join('')}
+                                    ${checklistItems.length > 3 ? '<div class="more-items">...</div>' : ''}
+                                </div>
+                            </div>
+                        `;
+                    }
+                } catch (e) {
+                    // Fallback para texto simples se não for JSON válido
+                    if (ticket.checklist.trim() !== "") {
+                        checklistInfo = `
+                            <div class="ticket-checklist">
+                                <strong>📋 Checklist:</strong>
+                                <div class="checklist-text">${ticket.checklist}</div>
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            // Último comentário
+            let ultimoComentarioHTML = '';
+            if (ticket.comentarios && ticket.comentarios.length > 0) {
+                const ultimo = ticket.comentarios[ticket.comentarios.length - 1];
+                if (ultimo.comentario && ultimo.comentario.trim() !== "" && ultimo.comentario !== "[]") {
+                    ultimoComentarioHTML = `
+                        <div class="ticket-last-comment">
+                            <strong>💬 Último Comentário:</strong>
+                            <div class="comment-text">"${ultimo.comentario}" - <small>${ultimo.usuario}</small></div>
+                        </div>
+                    `;
+                }
+            }
+
+            // Formata a data para o filtro
+            const dataFormatada = ticket.timestamp ? new Date(ticket.timestamp).toISOString().split('T')[0] : '';
+
+            return `
+                <div class="ticket-item ${isFechado ? 'ticket-fechado' : ''}" 
+                     draggable="true" 
+                     data-ticket-id="${ticket.id}"
+                     data-prioridade="${ticket.prioridade}"
+                     data-categoria="${ticket.categoria}"
+                     data-data="${dataFormatada}">
+                    <div class="ticket-id">#${ticket.id}</div>
+                    <div class="ticket-title">${ticket.titulo}</div>
+                    <div class="ticket-description">${ticket.descricao}</div>
+                    
+                    ${checklistInfo}
+                    ${ultimoComentarioHTML}
+                    ${resolucaoInfo}
+
+                    <div class="ticket-meta">
+                        <div class="ticket-priority priority-${ticket.prioridade}">${ticket.prioridade.toUpperCase()}</div>
+                        <div class="ticket-assignee">${ticket.responsavel || 'Não atribuído'}</div>
+                    </div>
+                    ${tempoInfo}
+                    <div class="ticket-time">${formatarTimestamp(ticket.timestamp)}</div>
+
+                    <div class="ticket-actions">
+                        <button class="ticket-action-btn" onclick="editarTicket('${ticket.id}')">✏️</button>
+                        <button class="ticket-action-btn delete" onclick="confirmarDelete('${ticket.id}')">🗑️</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Setup Drag and Drop
+        function setupDragAndDrop() {
+            const columns = document.querySelectorAll('.kanban-column');
+
+            columns.forEach(column => {
+                column.addEventListener('dragover', handleDragOver);
+                column.addEventListener('drop', handleDrop);
+                column.addEventListener('dragenter', handleDragEnter);
+                column.addEventListener('dragleave', handleDragLeave);
+            });
+        }
+
+        // Setup ticket drag
+        function setupTicketDrag(ticketElement) {
+            ticketElement.addEventListener('dragstart', handleDragStart);
+            ticketElement.addEventListener('dragend', handleDragEnd);
+        }
+
+        // Drag handlers
+        function handleDragStart(e) {
+            draggedTicket = e.target.getAttribute('data-ticket-id');
+            e.target.classList.add('dragging');
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+            draggedTicket = null;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
+
+        function handleDragEnter(e) {
+            e.preventDefault();
+            if (e.target.classList.contains('kanban-column') || e.target.closest('.kanban-column')) {
+                const column = e.target.classList.contains('kanban-column') ? e.target : e.target.closest('.kanban-column');
+                column.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            if (e.target.classList.contains('kanban-column')) {
+                e.target.classList.remove('drag-over');
+            }
+        }
+
+        async function handleDrop(e) {
+            e.preventDefault();
+
+            const column = e.target.classList.contains('kanban-column') ? e.target : e.target.closest('.kanban-column');
+            if (!column) return;
+
+            column.classList.remove('drag-over');
+
+            const newStatus = column.getAttribute('data-status');
+
+            if (draggedTicket && newStatus) {
+                await atualizarStatusTicket(draggedTicket, newStatus);
+            }
+        }
+
+        // Atualiza status do ticket
+        async function atualizarStatusTicket(ticketId, novoStatus) {
+            try {
+                const response = await fetch(`/api/tickets/${ticketId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: novoStatus })
+                });
+
+                if (response.ok) {
+                    // Atualiza ticket local
+                    const ticket = tickets.find(t => t.id === ticketId);
+                    if (ticket) {
+                        ticket.status = novoStatus;
+                    }
+
+                    renderizarKanban();
+                    showMessage(`✅ Ticket #${ticketId} movido para ${novoStatus}`, 'success');
+                } else {
+                    throw new Error('Erro ao atualizar ticket');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                showMessage('❌ Erro ao mover ticket', 'error');
+                carregarTickets(); // Recarrega em caso de erro
+            }
+        }
+
+        // Modals
+        function setupModals() {
+            const modals = document.querySelectorAll('.modal');
+
+            modals.forEach(modal => {
+                const closeBtn = modal.querySelector('.close');
+
+                closeBtn.addEventListener('click', () => {
+                    modal.style.display = 'none';
+                });
+
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+            });
+
+            // Form handlers
+            document.getElementById('formNovoTicket').addEventListener('submit', criarTicket);
+            document.getElementById('formEditarTicket').addEventListener('submit', salvarEdicaoTicket);
+        }
+
+        // Abre modal novo ticket
+        function abrirModalNovoTicket() {
+            document.getElementById('modalNovoTicket').style.display = 'block';
+            // Reset da visibilidade dos campos de contato
+            toggleContactFields();
+        }
+
+        // Fecha modal
+        function fecharModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Cria novo ticket
+        async function criarTicket(e) {
+            e.preventDefault();
+
+            try {
+                const formData = {
+                    nome: document.getElementById('nome').value,
+                    titulo: document.getElementById('titulo').value,
+                    descricao: document.getElementById('descricao').value,
+                    prioridade: document.getElementById('prioridade').value,
+                    categoria: document.getElementById('categoria').value,
+                    tempoEstimado: document.getElementById('tempoEstimado').value || '2h'
+                };
+
+                const response = await fetch('/api/tickets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify((() => {
+                        if (formData.categoria === 'Estoque TI') {
+                            return {
+                                ...formData,
+                                requisitante: document.getElementById('requisitante').value || '',
+                                produto: document.getElementById('produto').value || '',
+                                nfeArquivo: document.getElementById('nfeArquivo').value || ''
+                            };
+                        }
+                        return formData;
+                    })())
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showMessage(`✅ Ticket #${result.ticket_id} criado com sucesso`, 'success');
+                    fecharModal('modalNovoTicket');
+                    document.getElementById('formNovoTicket').reset();
+                    carregarTickets();
+                } else {
+                    throw new Error('Erro ao criar ticket');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                showMessage('❌ Erro ao criar ticket', 'error');
+            }
+        }
+
+        // Editar ticket
+        async function editarTicket(ticketId) {
+            try {
+                const response = await fetch(`/api/tickets/${ticketId}`);
+
+                if (response.ok) {
+                    const ticket = await response.json();
+
+                    // Preenche form de edição
+                    document.getElementById('editTicketId').value = ticket.id;
+                    document.getElementById('editTitulo').value = ticket.titulo;
+                    document.getElementById('editDescricao').value = ticket.descricao;
+                    document.getElementById('editResolucao').value = ticket.resolucao || '';
+                    document.getElementById('editStatus').value = ticket.status;
+                    document.getElementById('editPrioridade').value = ticket.prioridade;
+                    document.getElementById('editResponsavel').value = ticket.responsavel || '';
+                    document.getElementById('editCategoria').value = ticket.categoria;
+
+                    // Inicializa checklist interativo
+                    window.currentChecklistItems = [];
+                    try {
+                        if (ticket.checklist && ticket.checklist.trim() !== "" && ticket.checklist !== "[]") {
+                            window.currentChecklistItems = JSON.parse(ticket.checklist);
+                        }
+                    } catch (e) {
+                        console.error("Erro ao carregar checklist:", e);
+                        // Fallback: divide por linhas e cria múltiplos itens
+                        if (ticket.checklist && ticket.checklist.trim() !== "") {
+                            window.currentChecklistItems = ticket.checklist
+                                .split('\n')
+                                .filter(line => line.trim() !== "")
+                                .map(line => ({ text: line.trim(), done: false }));
+                        }
+                    }
+                    renderChecklistModal();
+
+                    // Renderiza lista de comentários no modal
+                    const comentariosLista = document.getElementById('editComentariosLista');
+                    if (ticket.comentarios && ticket.comentarios.length > 0) {
+                        comentariosLista.innerHTML = ticket.comentarios.map(c => `
+                            <div class="comentario-item">
+                                <span class="comentario-usuario">${c.usuario}:</span>
+                                <span class="comentario-texto">${c.comentario}</span>
+                                <small class="comentario-data">${c.timestamp}</small>
+                            </div>
+                        `).join('');
+                    } else {
+                        comentariosLista.innerHTML = '<div class="no-comments">Sem comentários até agora.</div>';
+                    }
+                    document.getElementById('novoComentarioTexto').value = '';
+
+                    // Estoque TI (edição)
+                    const editRequisitante = document.getElementById('editRequisitante');
+                    const editProduto = document.getElementById('editProduto');
+                    const editNfeArquivo = document.getElementById('editNfeArquivo');
+                    if (editRequisitante) editRequisitante.value = ticket.requisitante || '';
+                    if (editProduto) editProduto.value = ticket.produto || '';
+                    if (editNfeArquivo) editNfeArquivo.value = ticket.nfeArquivo || '';
+                    document.getElementById('editTempoEstimado').value = ticket.tempoEstimado || '';
+                    const tempoGastoInput = document.getElementById('editTempoGasto');
+                    if (tempoGastoInput) {
+                        tempoGastoInput.value = ticket.tempoGasto || '';
+                    }
+
+                    // Mostra/esconde campo de resolução baseado no status
+                    toggleResolucaoField();
+                    // Mostra/esconde campos Estoque TI baseado na categoria
+                    toggleEditEstoqueFields();
+
+                    // Abre modal
+                    document.getElementById('modalEditarTicket').style.display = 'block';
+                } else {
+                    throw new Error('Erro ao carregar dados do ticket');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                showMessage('❌ Erro ao carregar ticket para edição', 'error');
+            }
+        }
+
+        // Salva edição do ticket
+        async function salvarEdicaoTicket(e) {
+            e.preventDefault();
+
+            try {
+                const ticketId = document.getElementById('editTicketId').value;
+                const tempoGastoInput = document.getElementById('editTempoGasto');
+                const formData = {
+                    titulo: document.getElementById('editTitulo').value,
+                    descricao: document.getElementById('editDescricao').value,
+                    resolucao: document.getElementById('editResolucao').value,
+                    status: document.getElementById('editStatus').value,
+                    prioridade: document.getElementById('editPrioridade').value,
+                    responsavel: document.getElementById('editResponsavel').value,
+                    categoria: document.getElementById('editCategoria').value,
+                    checklist: JSON.stringify(window.currentChecklistItems || []),
+                    tempoEstimado: document.getElementById('editTempoEstimado').value,
+                    tempoGasto: tempoGastoInput ? tempoGastoInput.value : undefined
+                };
+
+                // Campos específicos Estoque TI (edição)
+                if (formData.categoria === 'Estoque TI') {
+                    formData.requisitante = (document.getElementById('editRequisitante')?.value || '');
+                    formData.produto = (document.getElementById('editProduto')?.value || '');
+                    formData.nfeArquivo = (document.getElementById('editNfeArquivo')?.value || '');
+                }
+
+                const response = await fetch(`/api/tickets/${ticketId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    showMessage(`✅ Ticket #${ticketId} atualizado com sucesso`, 'success');
+                    fecharModal('modalEditarTicket');
+                    carregarTickets();
+                } else {
+                    throw new Error('Erro ao atualizar ticket');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                showMessage('❌ Erro ao atualizar ticket', 'error');
+            }
+        }
+
+        // Renderiza itens da checklist no modal
+        function renderChecklistModal() {
+            const container = document.getElementById('checklistItemsContainer');
+            if (!container) return;
+
+            const items = window.currentChecklistItems || [];
+            if (items.length === 0) {
+                container.innerHTML = '<div class="no-items">Nenhum item adicionado.</div>';
+                return;
+            }
+
+            container.innerHTML = items.map((item, index) => `
+                <div class="checklist-item-edit">
+                    <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleItemChecklist(${index})">
+                    <span class="item-text ${item.done ? 'done' : ''}">${item.text}</span>
+                    <button type="button" class="btn-delete-item" onclick="removerItemChecklist(${index})">🗑️</button>
+                </div>
+            `).join('');
+        }
+
+        function adicionarItemChecklist() {
+            const input = document.getElementById('novoItemChecklistTexto');
+            const texto = input.value.trim();
+            if (!texto) return;
+
+            if (!window.currentChecklistItems) window.currentChecklistItems = [];
+            window.currentChecklistItems.push({ text: texto, done: false });
+            input.value = '';
+            renderChecklistModal();
+        }
+
+        function toggleItemChecklist(index) {
+            if (window.currentChecklistItems && window.currentChecklistItems[index]) {
+                window.currentChecklistItems[index].done = !window.currentChecklistItems[index].done;
+                renderChecklistModal();
+            }
+        }
+
+        function removerItemChecklist(index) {
+            if (window.currentChecklistItems) {
+                window.currentChecklistItems.splice(index, 1);
+                renderChecklistModal();
+            }
+        }
+
+        // Salva novo comentário do modal
+        async function salvarNovoComentario() {
+            const ticketId = document.getElementById('editTicketId').value;
+            const comentarioTexto = document.getElementById('novoComentarioTexto').value;
+
+            if (!comentarioTexto.trim()) {
+                showMessage('⚠️ Digite um comentário', 'info');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/tickets/${ticketId}/comentarios`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ comentario: comentarioTexto })
+                });
+
+                if (response.ok) {
+                    showMessage('✅ Comentário adicionado', 'success');
+                    // Recarrega o ticket no modal
+                    editarTicket(ticketId);
+                    // Recarrega todos para atualizar o card
+                    carregarTickets();
+                } else {
+                    throw new Error('Erro ao adicionar comentário');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                showMessage('❌ Erro ao adicionar comentário', 'error');
+            }
+        }
+
+        // Confirma exclusão do ticket
+        function confirmarDelete(ticketId) {
+            if (confirm('Tem certeza que deseja excluir este ticket? Esta ação não pode ser desfeita.')) {
+                deletarTicket(ticketId);
+            }
+        }
+
+        // Deleta ticket
+        async function deletarTicket(ticketId) {
+            try {
+                const response = await fetch(`/api/tickets/${ticketId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showMessage(`✅ Ticket #${ticketId} excluído com sucesso`, 'success');
+                    carregarTickets();
+                } else {
+                    throw new Error('Erro ao deletar ticket');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                showMessage('❌ Erro ao deletar ticket', 'error');
+            }
+        }
+
+        // Sincronização de tickets
+        async function sincronizarTickets() {
+            try {
+                showMessage('🔄 Sincronizando tickets...', 'info');
+
+                const response = await fetch('/api/sync', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showMessage(`✅ ${result.message}`, 'success');
+                    carregarTickets();
+                } else {
+                    showMessage(`❌ ${result.message}`, 'error');
+                }
+            } catch (error) {
+                console.error('Erro na sincronização:', error);
+                showMessage('❌ Erro ao sincronizar tickets', 'error');
+            }
+        }
+
+        // Mostra mensagens
+        function showMessage(message, type = 'info') {
+            const messageArea = document.getElementById('messageArea');
+            let className = 'info';
+
+            if (type === 'success') className = 'success';
+            if (type === 'error') className = 'error';
+
+            messageArea.innerHTML = `<div class="message ${className}">${message}</div>`;
+
+            // Remove mensagem após 5 segundos
+            setTimeout(() => {
+                messageArea.innerHTML = '';
+            }, 5000);
+        }
+
+        // Atualiza contadores
+        function atualizarContadores() {
+            const statusList = ['Aberto', 'Em Andamento', 'Aguardando', 'Fechado'];
+
+            statusList.forEach(status => {
+                const container = document.getElementById(`tickets-${status.toLowerCase().replace(' ', '-')}`);
+                const countElement = document.getElementById(`count-${status.toLowerCase().replace(' ', '-')}`);
+                const visibleTickets = container.querySelectorAll('.ticket-item:not([style*="display: none"])');
+                countElement.textContent = visibleTickets.length;
+            });
+        }
+
+        // Maximizar coluna
+        function maximizarColuna(status) {
+            const ticketsDoStatus = tickets.filter(ticket => ticket.status === status);
+            const modal = document.getElementById('modalMaximizado');
+            const titulo = document.getElementById('tituloMaximizado');
+            const grid = document.getElementById('ticketsMaximizadoGrid');
+
+            // Define o título baseado no status
+            let icone = '';
+            let cor = '';
+            switch (status) {
+                case 'Aberto':
+                    icone = '🔴';
+                    cor = 'status-aberto';
+                    break;
+                case 'Em Andamento':
+                    icone = '🟡';
+                    cor = 'status-em-andamento';
+                    break;
+                case 'Aguardando':
+                    icone = '🔵';
+                    cor = 'status-aguardando';
+                    break;
+                case 'Fechado':
+                    icone = '🟢';
+                    cor = 'status-fechado';
+                    break;
+            }
+
+            titulo.textContent = `${icone} ${status} (${ticketsDoStatus.length} tickets)`;
+            titulo.className = `modal-title ${cor}`;
+
+            // Renderiza tickets maximizados
+            grid.innerHTML = ticketsDoStatus.map(ticket => createTicketMaximizadoHTML(ticket)).join('');
+
+            modal.style.display = 'block';
+        }
+
+        // Cria HTML do ticket maximizado
+        function createTicketMaximizadoHTML(ticket) {
+            const isFechado = ticket.status === 'Fechado';
+            const tempoInfo = isFechado ?
+                `<div class="ticket-time-info-max">
+                    <span><strong>⏱️ Estimado:</strong> ${ticket.tempoEstimado || 'N/A'}</span>
+                    <span><strong>✅ Gasto:</strong> ${ticket.tempoGasto || 'N/A'}</span>
+                </div>` :
+                `<div class="ticket-time-info-max">
+                    <span><strong>⏱️ Tempo Estimado:</strong> ${ticket.tempoEstimado || 'N/A'}</span>
+                </div>`;
+
+            const resolucaoInfo = isFechado && ticket.resolucao ?
+                `<div class="ticket-resolution-max">
+                    <strong>✅ Resolução:</strong>
+                    <p>${ticket.resolucao}</p>
+                </div>` : '';
+
+            const estoqueInfo = ticket.categoria === 'Estoque TI' ?
+                `<div class="ticket-estoque-info">
+                    ${ticket.requisitante ? `<div><strong>👤 Requisitante:</strong> ${ticket.requisitante}</div>` : ''}
+                    ${ticket.produto ? `<div><strong>📦 Produto:</strong> ${ticket.produto}</div>` : ''}
+                    ${ticket.nfeArquivo ? `<div><strong>📄 NFe:</strong> ${ticket.nfeArquivo}</div>` : ''}
+                </div>` : '';
+
+            return `
+                <div class="ticket-item-maximizado ${isFechado ? 'ticket-fechado' : ''}">
+                    <div class="ticket-header-max">
+                        <div class="ticket-id-max">#${ticket.id}</div>
+                        <div class="ticket-priority priority-${ticket.prioridade}">${ticket.prioridade.toUpperCase()}</div>
+                    </div>
+                    
+                    <div class="ticket-title-max">${ticket.titulo}</div>
+                    
+                    <div class="ticket-description-max">${ticket.descricao}</div>
+                    
+                    ${resolucaoInfo}
+                    
+                    <div class="ticket-info-grid">
+                        <div class="info-item">
+                            <span class="info-label">📋 Categoria:</span>
+                            <span class="info-value">${ticket.categoria}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">👤 Cliente:</span>
+                            <span class="info-value">${ticket.nome || 'N/A'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">🎯 Responsável:</span>
+                            <span class="info-value">${ticket.responsavel || 'Não atribuído'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">📅 Data:</span>
+                            <span class="info-value">${formatarTimestamp(ticket.timestamp)}</span>
+                        </div>
+                    </div>
+
+                    ${estoqueInfo}
+                    ${tempoInfo}
+                    
+                    <div class="ticket-actions-max">
+                        <button class="ticket-action-btn" onclick="editarTicket('${ticket.id}'); fecharModal('modalMaximizado');">✏️ Editar</button>
+                        <button class="ticket-action-btn delete" onclick="confirmarDelete('${ticket.id}')">🗑️ Excluir</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Exportar Excel (CSV)
+        function exportarExcel() {
+            window.location.href = '/api/export/excel';
+        }
+
+        // Atualização automática a cada 30 segundos
+        setInterval(() => {
+            carregarTickets();
+        }, 30000);
+
+        // Atalhos do teclado
+        document.addEventListener('keydown', function (e) {
+            // Ctrl/Cmd + N = Novo ticket
+            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                e.preventDefault();
+                abrirModalNovoTicket();
+            }
+
+            // ESC = Fechar modals
+            if (e.key === 'Escape') {
+                const modals = document.querySelectorAll('.modal');
+                modals.forEach(modal => {
+                    if (modal.style.display === 'block') {
+                        modal.style.display = 'none';
+                    }
+                });
+            }
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // ── LÓGICA DE ATUALIZAÇÃO ──────────────────────────
+            const CURRENT_VERSION = "1.3.0";
+            async function checkVersion() {
+                try {
+                    const res = await fetch('/api/app-version');
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    if (String(data.version) !== String(CURRENT_VERSION)) {
+                        const banner = document.getElementById('updateBanner');
+                        const btn = document.getElementById('updateBtn');
+                        if (banner && btn) {
+                            banner.style.display = 'block';
+                            btn.onclick = () => {
+                                if (window.electronAPI) {
+                                    btn.disabled = true;
+                                    btn.textContent = "Iniciando download...";
+                                    window.electronAPI.startUpdate(encodeURI(data.url));
+                                    window.electronAPI.onUpdateProgress((p) => {
+                                        const pct = Math.round(p * 100);
+                                        btn.textContent = "Baixando " + pct + "%...";
+                                        if (pct >= 100) btn.textContent = "Preparando instalação...";
+                                    });
+                                    window.electronAPI.onUpdateError((msg) => {
+                                        btn.disabled = false;
+                                        btn.textContent = "Erro: " + msg;
+                                        setTimeout(() => { btn.textContent = "Tentar Novamente"; }, 3000);
+                                    });
+                                } else {
+                                    window.location.href = data.url;
+                                }
+                            };
+                        }
+                    }
+                } catch (e) { console.log("Erro check version:", e); }
+            }
+            checkVersion();
+        });
+    </script>
+    <div class="ver-badge">v1.3.0</div>
+
+    <style>
+        /* Estilos para maximização de coluna */
+        .column-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-maximize {
+            background: rgba(33, 150, 243, 0.2);
+            border: 1px solid rgba(33, 150, 243, 0.4);
+            color: #90caf9;
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            line-height: 1;
+        }
+
+        .btn-maximize:hover {
+            background: rgba(33, 150, 243, 0.4);
+            transform: scale(1.1);
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+        }
+
+        .modal-maximizado .modal-content {
+            max-width: 95%;
+            width: 1400px;
+            max-height: 90vh;
+        }
+
+        .modal-maximizado .modal-body {
+            max-height: calc(90vh - 100px);
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .tickets-maximizado-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 20px;
+        }
+
+        .ticket-item-maximizado {
+            background: linear-gradient(135deg, rgba(27, 38, 59, 0.95), rgba(30, 58, 95, 0.8));
+            border: 2px solid rgba(42, 62, 89, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .ticket-item-maximizado::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #2196f3, #90caf9);
+        }
+
+        .ticket-item-maximizado:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(33, 150, 243, 0.4);
+            border-color: #2196f3;
+        }
+
+        .ticket-header-max {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .ticket-id-max {
+            font-size: 13px;
+            color: #90caf9;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .ticket-title-max {
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #ffffff;
+            font-size: 17px;
+            line-height: 1.4;
+        }
+
+        .ticket-description-max {
+            font-size: 14px;
+            color: #b8c5d6;
+            margin-bottom: 16px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .ticket-resolution-max {
+            background: rgba(76, 175, 80, 0.1);
+            border-left: 3px solid #4caf50;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+
+        .ticket-resolution-max strong {
+            color: #81c784;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .ticket-resolution-max p {
+            margin: 0;
+            color: #b8c5d6;
+            font-size: 14px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .ticket-info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: rgba(17, 32, 49, 0.4);
+            border-radius: 8px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .info-label {
+            font-size: 11px;
+            color: #90caf9;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            font-size: 13px;
+            color: #e0e0e0;
+            font-weight: 500;
+        }
+
+        .ticket-estoque-info {
+            background: rgba(33, 150, 243, 0.1);
+            border-left: 3px solid #2196f3;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #b8c5d6;
+        }
+
+        .ticket-estoque-info div {
+            margin-bottom: 6px;
+        }
+
+        .ticket-estoque-info div:last-child {
+            margin-bottom: 0;
+        }
+
+        .ticket-estoque-info strong {
+            color: #90caf9;
+        }
+
+        .ticket-time-info-max {
+            display: flex;
+            gap: 16px;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #b8c5d6;
+            margin-bottom: 16px;
+            padding: 10px;
+            background: rgba(17, 32, 49, 0.4);
+            border-radius: 6px;
+        }
+
+        .ticket-time-info-max span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .ticket-actions-max {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            padding-top: 12px;
+            border-top: 1px solid rgba(33, 150, 243, 0.2);
+        }
+
+        .ticket-actions-max .ticket-action-btn {
+            padding: 8px 16px;
+            font-size: 13px;
+            opacity: 1;
+        }
+
+        @media (max-width: 1200px) {
+            .tickets-maximizado-grid {
+                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .tickets-maximizado-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-maximizado .modal-content {
+                width: 95%;
+                max-width: 100%;
+            }
+        }
+
+        .ticket-fechado {
+            opacity: 0.8;
+            border-left: 4px solid #4caf50;
+        }
+
+        .ticket-time-info {
+            font-size: 11px;
+            color: #666;
+            margin-top: 5px;
+            padding: 2px 5px;
+            background: #f5f5f5;
+            border-radius: 3px;
+        }
+
+        .ticket-resolution {
+            font-size: 12px;
+            color: #333;
+            margin: 5px 0;
+            padding: 5px;
+            background: #e8f5e8;
+            border-radius: 3px;
+            border-left: 3px solid #4caf50;
+        }
+
+        .ticket-resolution strong {
+            color: #2e7d32;
+        }
+
+        #contactFields {
+            transition: all 0.3s ease;
+        }
+
+        #editResolucaoGroup {
+            transition: all 0.3s ease;
+        }
+
+        .form-control:required {
+            border-left: 3px solid #2196F3;
+        }
+    </style>
+</body>
+
+</html>

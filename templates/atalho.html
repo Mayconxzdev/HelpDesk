@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atalhos - Help Desk</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --secondary: #ec4899;
+            --accent: #10b981;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at top left, #1e293b, #0f172a);
+            color: var(--light);
+            min-height: 100vh;
+            padding: 2rem;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #818cf8, #c084fc, #f472b6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            padding: 12px 20px;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+        }
+
+        .btn-add {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-add:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(99, 102, 241, 0.3);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .card-icon {
+            font-size: 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+        }
+
+        .card-info h2 {
+            font-size: 1.25rem;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+
+        .card-info p {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            word-break: break-all;
+        }
+
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .tag {
+            background: rgba(99, 102, 241, 0.1);
+            color: #818cf8;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .card-actions {
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-open {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .btn-open:hover {
+            opacity: 0.9;
+            transform: scale(1.05);
+        }
+
+        .btn-delete {
+            background: transparent;
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+        }
+
+        .modal {
+            background: #1e293b;
+            border: 1px solid var(--glass-border);
+            width: 100%;
+            max-width: 500px;
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal h2 {
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid var(--glass-border);
+            padding: 10px 15px;
+            border-radius: 10px;
+            color: #fff;
+            outline: none;
+        }
+
+        .form-group input:focus {
+            border-color: var(--primary);
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn-cancel {
+            background: transparent;
+            color: #fff;
+            border: 1px solid var(--glass-border);
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Loading Spinner */
+        .loader {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="updateBanner">
+        🚀 Nova versão disponível! <button class="btn-update" id="updateBtn">Atualizar</button>
+    </div>
+    <div class="container">
+        <header>
+            <a href="/" style="text-decoration: none; color: inherit; display: inline-block; margin-bottom: 1rem;">←
+                Voltar ao Portal</a>
+            <h1>Gerenciador de Atalhos</h1>
+            <p>Acesse pastas de rede e locais configuradas pela TI</p>
+        </header>
+
+        <div class="top-bar">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Pesquisar por nome ou tag...">
+            </div>
+            <button class="btn-add" onclick="openModal()">
+                <span>+</span> Novo Atalho
+            </button>
+        </div>
+
+        <div id="shortcutsGrid" class="grid">
+            <!-- Cards serão inseridos aqui -->
+        </div>
+
+        <div id="loader" class="loader" style="display: none;"></div>
+    </div>
+
+    <!-- Modal Adicionar -->
+    <div id="modalOverlay" class="modal-overlay">
+        <div class="modal">
+            <h2>Adicionar Novo Atalho</h2>
+            <form id="shortcutForm">
+                <div class="form-group">
+                    <label>Nome do Atalho</label>
+                    <input type="text" id="nameInput" placeholder="Ex: Pasta de Projetos" required>
+                </div>
+                <div class="form-group">
+                    <label>Caminho da Pasta (Rede ou Local)</label>
+                    <input type="text" id="pathInput" placeholder="Ex: \\Servidor\Publico ou C:\Arquivos" required>
+                </div>
+                <div class="form-group">
+                    <label>Tags (separadas por vírgula)</label>
+                    <input type="text" id="tagsInput" placeholder="Ex: projeto, suporte, financeiro">
+                </div>
+                <div class="form-group">
+                    <label>Ícone (Emoji)</label>
+                    <input type="text" id="iconInput" value="📁" maxlength="2">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn-add">Salvar Atalho</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let allShortcuts = [];
+
+        async function loadShortcuts() {
+            const grid = document.getElementById('shortcutsGrid');
+            const loader = document.getElementById('loader');
+
+            grid.innerHTML = '';
+            loader.style.display = 'block';
+
+            try {
+                const response = await fetch('/api/it/shortcuts');
+                allShortcuts = await response.json();
+                renderShortcuts(allShortcuts);
+            } catch (error) {
+                console.error('Erro ao carregar atalhos:', error);
+                grid.innerHTML = '<p style="text-align:center; grid-column: 1/-1; color: var(--danger);">Erro ao carregar dados do servidor.</p>';
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+
+        function renderShortcuts(shortcuts) {
+            const grid = document.getElementById('shortcutsGrid');
+            grid.innerHTML = '';
+
+            if (shortcuts.length === 0) {
+                grid.innerHTML = '<p style="text-align:center; grid-column: 1/-1; color: #94a3b8; padding: 3rem;">Nenhum atalho encontrado.</p>';
+                return;
+            }
+
+            shortcuts.forEach(s => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="card-icon">${s.icone || '📁'}</div>
+                        <div class="card-info">
+                            <h2>${s.nome}</h2>
+                            <p>${s.caminho}</p>
+                        </div>
+                    </div>
+                    <div class="tag-list">
+                        ${(s.tags || []).map(t => `<span class="tag">${t}</span>`).join('')}
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn-open" onclick="openFolder('${s.caminho.replace(/\\/g, '\\\\')}')">Abrir no Explorer</button>
+                        <button class="btn-delete" onclick="deleteShortcut(${s.id})" title="Excluir">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function openFolder(path) {
+            console.log('Abrindo pasta:', path);
+            // Verifica se está rodando no Electron
+            if (window.electronAPI && window.electronAPI.openFolder) {
+                window.electronAPI.openFolder(path);
+            } else {
+                alert('Funcionalidade disponível apenas através do aplicativo Help Desk (Electron).');
+            }
+        }
+
+        async function deleteShortcut(id) {
+            if (!confirm('Deseja realmente excluir este atalho?')) return;
+
+            try {
+                const response = await fetch(`/api/it/shortcuts/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    loadShortcuts();
+                }
+            } catch (error) {
+                alert('Erro ao deletar atalho');
+            }
+        }
+
+        // Modal Logic
+        function openModal() {
+            document.getElementById('modalOverlay').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').style.display = 'none';
+            document.getElementById('shortcutForm').reset();
+            document.getElementById('iconInput').value = '📁';
+        }
+
+        document.getElementById('shortcutForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                nome: document.getElementById('nameInput').value,
+                caminho: document.getElementById('pathInput').value,
+                tags: document.getElementById('tagsInput').value,
+                icone: document.getElementById('iconInput').value
+            };
+
+            try {
+                const response = await fetch('/api/it/shortcuts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    closeModal();
+                    loadShortcuts();
+                } else {
+                    const err = await response.json();
+                    alert('Erro: ' + (err.error || 'Falha ao salvar'));
+                }
+            } catch (error) {
+                alert('Erro de conexão');
+            }
+        };
+
+        // Search Filter
+        document.getElementById('searchInput').oninput = (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = allShortcuts.filter(s => {
+                const nameMatch = s.nome.toLowerCase().includes(term);
+                const tagMatch = (s.tags || []).some(t => t.toLowerCase().includes(term));
+                const pathMatch = s.caminho.toLowerCase().includes(term);
+                return nameMatch || tagMatch || pathMatch;
+            });
+            renderShortcuts(filtered);
+        };
+
+        // Initial Load
+        loadShortcuts();
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // ── LÓGICA DE ATUALIZAÇÃO ──────────────────────────
+            const CURRENT_VERSION = "1.3.0";
+            async function checkVersion() {
+                try {
+                    const res = await fetch('/api/app-version');
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    if (String(data.version) !== String(CURRENT_VERSION)) {
+                        const banner = document.getElementById('updateBanner');
+                        const btn = document.getElementById('updateBtn');
+                        if (banner && btn) {
+                            banner.style.display = 'block';
+                            btn.onclick = () => {
+                                if (window.electronAPI) {
+                                    btn.disabled = true; btn.textContent = "Baixando...";
+                                    window.electronAPI.startUpdate(encodeURI(data.url));
+                                } else { window.location.href = data.url; }
+                            };
+                        }
+                    }
+                } catch (e) { console.log("Erro check version:", e); }
+            }
+            checkVersion();
+        });
+    </script>
+    <div class="ver-badge">v1.3.0</div>
+</body>
+
+</html>

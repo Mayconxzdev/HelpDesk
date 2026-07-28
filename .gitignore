@@ -1,0 +1,50 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Runtime state and secrets
+.env
+.env.*
+!.env.example
+instance/
+*.db
+*.sqlite*
+*.pkl
+conversation_log.*
+embeddings.*
+uploads/
+documents/
+data/
+
+# Node / Electron
+node_modules/
+hd_electron/node_modules/
+hd_electron/dist/
+hd_electron/out/
+npm-debug.log*
+
+# Builds and logs
+dist/
+build/
+out/
+*.log
+*.exe
+*.dll
+*.zip
+*.tar
+*.tar.gz
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*~

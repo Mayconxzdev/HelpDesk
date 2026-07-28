@@ -1,0 +1,4 @@
+-r requirements.txt
+numpy>=2,<3
+scikit-learn>=1.7,<2
+redis>=6,<7

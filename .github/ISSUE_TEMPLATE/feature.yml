@@ -1,0 +1,24 @@
+name: Sugerir melhoria
+description: Proponha uma evolução de produto ou engenharia.
+title: "[Melhoria]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema
+      description: Qual necessidade do usuário ou da operação deve ser resolvida?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposta
+      description: Descreva a solução e os critérios de aceitação.
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Riscos e dependências
+      description: Considere permissões, dados, migrações, integrações e ações sensíveis.

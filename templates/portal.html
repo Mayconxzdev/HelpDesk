@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Corporativo - Escolha seu Setor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='portal.css') }}">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Banner de Atualização */
+        #updateBanner {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #5865f2;
+            color: #fff;
+            padding: 12px;
+            text-align: center;
+            z-index: 10000;
+            font-size: 14px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            font-weight: 600;
+        }
+
+        .btn-update {
+            background: #fff;
+            color: #5865f2;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-weight: 700;
+            margin-left: 15px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-update:hover {
+            background: #f3f4f6;
+            transform: scale(1.05);
+        }
+
+        .btn-update:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        /* Versão no Rodapé (Super Visível) */
+        .ver-badge {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 12px;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 4px 10px;
+            border-radius: 6px;
+            z-index: 10000;
+            font-weight: 700;
+            pointer-events: none;
+            font-family: sans-serif;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="updateBanner">
+        🚀 Uma nova versão do HelpDesk está disponível!
+        <button class="btn-update" id="updateBtn">Atualizar Agora</button>
+    </div>
+    <div class="portal-header">
+        <h1>Bem-vindo ao Portal</h1>
+        <p>Selecione o setor que deseja acessar para continuar</p>
+    </div>
+
+    <div class="cards-container">
+        <!-- Dashboard TI -->
+        {% if usuario == 'admin' %}
+        <a href="{{ url_for('index') }}" class="sector-card">
+            <span class="status-badge status-online">Ativo</span>
+            <div class="card-icon">💻</div>
+            <h2>T.I.</h2>
+            <p>Suporte técnico, abertura de chamados, inventário e controle de rede.</p>
+        </a>
+        {% endif %}
+
+        <!-- Atalho -->
+        <a href="{{ url_for('atalho_page') }}" class="sector-card">
+            <span class="status-badge status-online">Ativo</span>
+            <div class="card-icon">📁</div>
+            <h2>Atalhos</h2>
+            <p>Acesso rápido a pastas de rede e diretórios locais da empresa.</p>
+        </a>
+
+        <!-- Chat Interno -->
+        <a href="{{ url_for('chat') }}" class="sector-card">
+            <span class="status-badge status-online">Ativo</span>
+            <div class="card-icon">💬</div>
+            <h2>Chat Interno</h2>
+            <p>Mensagens, arquivos, grupos e convocações entre equipes em tempo real.</p>
+        </a>
+
+
+        <script>
+            // Adiciona um efeito de parallax suave nos cards ao mover o mouse
+            document.querySelectorAll('.sector-card').forEach(card => {
+                card.addEventListener('mousemove', e => {
+                    const rect = card.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+
+                    const rotateX = (y - centerY) / 10;
+                    const rotateY = (centerX - x) / 10;
+
+                    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-5px)`;
+                });
+
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0)`;
+                });
+            });
+        </script>
+
+        <div class="ver-badge" id="appVersionLabel">v...</div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                // ── LÓGICA DE ATUALIZAÇÃO (auto-detect) ───────────────
+                const versionLabel = document.getElementById('appVersionLabel');
+
+                async function checkVersion() {
+                    try {
+                        const res = await fetch('/api/app-version');
+                        if (!res.ok) return;
+                        const data = await res.json();
+                        if (!data.url) return;
+
+                        const installedVersion = window.electronAPI ? window.electronAPI.getAppVersion() : '1.0.0';
+                        if (versionLabel) versionLabel.textContent = `Versão: ${installedVersion}`;
+
+                        const lastSeen = localStorage.getItem('hd_last_version') || '';
+                        if (data.version && data.version !== installedVersion && data.version !== lastSeen) {
+                            const banner = document.getElementById('updateBanner');
+                            const btn = document.getElementById('updateBtn');
+                            if (banner && btn) {
+                                banner.style.display = 'block';
+                                btn.onclick = () => {
+                                    if (window.electronAPI) {
+                                        btn.disabled = true;
+                                        btn.textContent = "Iniciando download...";
+                                        window.electronAPI.startUpdate(encodeURI(data.url));
+                                        window.electronAPI.onUpdateProgress((p) => {
+                                            const pct = p < 0
+                                                ? `${(Math.abs(p) / 1048576).toFixed(1)} MB`
+                                                : `${Math.round(p * 100)}%`;
+                                            btn.textContent = `Baixando ${pct}...`;
+                                            if (p >= 1) btn.textContent = "Preparando instalação...";
+                                        });
+                                        window.electronAPI.onUpdateError((msg) => {
+                                            btn.disabled = false;
+                                            btn.textContent = "Erro: " + msg;
+                                            setTimeout(() => { btn.textContent = "Tentar Novamente"; btn.disabled = false; }, 3000);
+                                        });
+                                    } else {
+                                        localStorage.setItem('hd_last_version', data.version);
+                                        window.location.href = data.url;
+                                    }
+                                };
+                            }
+                        }
+                    } catch (e) { console.log('Erro check version:', e); }
+                }
+                checkVersion();
+            });
+        </script>
+</body>
+
+</html>

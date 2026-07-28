@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central de TI | Gestão de Ativos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='it_control.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        #updateBanner {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #5865f2;
+            color: #fff;
+            padding: 10px;
+            text-align: center;
+            z-index: 10000;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .btn-update {
+            background: #fff;
+            color: #5865f2;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: 700;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+
+        .ver-badge {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 12px;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 4px 10px;
+            border-radius: 6px;
+            z-index: 10000;
+            font-weight: 700;
+            pointer-events: none;
+            font-family: sans-serif;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="updateBanner">
+        🚀 Nova versão disponível! <button class="btn-update" id="updateBtn">Atualizar</button>
+    </div>
+    <!-- Header -->
+    <header class="it-header">
+        <div class="header-left">
+            <div class="logo">🖥️</div>
+            <div class="header-titles">
+                <h1>Central de Controle TI</h1>
+                <span>Governança · Auditoria interna · Gestão de ativos</span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <a href="/dashboard" class="btn-back">🔙 Dashboard</a>
+            <div class="user-badge">
+                <div class="user-avatar-small" id="userAvatar">U</div>
+                <span id="username">Usuário</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('dashboard')" data-tab="dashboard">📊 Dashboard</button>
+        <button class="tab-btn" onclick="switchTab('usuarios')" data-tab="usuarios">👥 Usuários TI</button>
+        <button class="tab-btn" onclick="switchTab('ativos')" data-tab="ativos">🖥️ Ativos (PCs)</button>
+        <button class="tab-btn" onclick="switchTab('certificados')" data-tab="certificados">🔑 Certificados</button>
+        <button class="tab-btn" onclick="switchTab('emails-global')" data-tab="emails-global">📧 E-mails</button>
+        <button class="tab-btn" onclick="switchTab('nas')" data-tab="nas">💾 NAS Pastas</button>
+        <button class="tab-btn" onclick="switchTab('programas')" data-tab="programas">📦 Programas</button>
+        <button class="tab-btn" onclick="switchTab('contas')" data-tab="contas">🔐 Contas</button>
+        <button class="tab-btn" onclick="switchTab('auditoria')" data-tab="auditoria">📋 Auditoria</button>
+        <button class="tab-btn" onclick="switchTab('notas')" data-tab="notas">📝 Notas</button>
+        <button class="tab-btn ia-btn" onclick="switchTab('ia')" data-tab="ia"
+            style="background:linear-gradient(135deg,#7e57c2,#5e35b1);color:#fff;border:none">🤖 Assistente IA</button>
+    </nav>
+
+    <div id="messageArea"></div>
+
+    <!-- ===== TAB: Dashboard ===== -->
+    <div class="tab-content active" id="tab-dashboard">
+        <div class="kpi-grid">
+            <div class="kpi-card" onclick="switchTab('usuarios')">
+                <div class="kpi-icon" style="background:linear-gradient(135deg,#1565c0,#42a5f5)">👥</div>
+                <div class="kpi-body">
+                    <div class="kpi-val" id="kpi-users">-</div>
+                    <div class="kpi-label">Usuários Ativos</div>
+                </div>
+            </div>
+            <div class="kpi-card" onclick="switchTab('ativos')">
+                <div class="kpi-icon" style="background:linear-gradient(135deg,#2e7d32,#66bb6a)">🖥️</div>
+                <div class="kpi-body">
+                    <div class="kpi-val" id="kpi-pcs">-</div>
+                    <div class="kpi-label">PCs em Uso</div>
+                </div>
+            </div>
+            <div class="kpi-card alert-card" onclick="switchTab('ativos')">
+                <div class="kpi-icon" style="background:linear-gradient(135deg,#e65100,#ff9800)">🔧</div>
+                <div class="kpi-body">
+                    <div class="kpi-val" id="kpi-manutencao">-</div>
+                    <div class="kpi-label">Em Manutenção</div>
+                </div>
+            </div>
+            <div class="kpi-card alert-card" onclick="switchTab('certificados')">
+                <div class="kpi-icon" style="background:linear-gradient(135deg,#c62828,#ef5350)">⚠️</div>
+                <div class="kpi-body">
+                    <div class="kpi-val" id="kpi-certs-exp">-</div>
+                    <div class="kpi-label">Certs. Expirados</div>
+                </div>
+            </div>
+            <div class="kpi-card alert-card" onclick="switchTab('certificados')">
+                <div class="kpi-icon" style="background:linear-gradient(135deg,#f57f17,#fdd835)">🕐</div>
+                <div class="kpi-body">
+                    <div class="kpi-val" id="kpi-certs-30">-</div>
+                    <div class="kpi-label">Expirando em 30d</div>
+                </div>
+            </div>
+            <div class="kpi-card alert-card" onclick="switchTab('contas')">
+                <div class="kpi-icon" style="background:linear-gradient(135deg,#6a1b9a,#ab47bc)">🔄</div>
+                <div class="kpi-body">
+                    <div class="kpi-val" id="kpi-revisao">-</div>
+                    <div class="kpi-label">Contas sem Revisão</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-heading-row">
+            <h3>⚡ Usuários Recentes</h3>
+            <button class="btn-primary" onclick="switchTab('usuarios')">Ver Todos</button>
+        </div>
+        <div class="user-mini-list" id="dashRecentUsers"></div>
+    </div>
+
+    <!-- ===== TAB: Usuários TI ===== -->
+    <div class="tab-content" id="tab-usuarios">
+        <div class="section-header">
+            <h2>👥 Usuários TI</h2>
+            <button class="btn-primary" onclick="abrirModalUser()">➕ Novo Usuário</button>
+        </div>
+        <div class="search-bar">
+            <input type="text" id="searchUser" placeholder="🔍 Buscar por nome, setor, cargo..."
+                oninput="carregarUsuarios()">
+            <select id="filterUserStatus" onchange="carregarUsuarios()">
+                <option value="">Todos os Status</option>
+                <option value="Ativo">Ativo</option>
+                <option value="Inativo">Inativo</option>
+                <option value="Demitido">Demitido</option>
+            </select>
+        </div>
+        <div class="user-cards-grid" id="userGrid"></div>
+    </div>
+
+    <!-- ===== User Detail Panel ===== -->
+    <div id="userPanel" class="user-panel hidden">
+        <div class="user-panel-header">
+            <button class="btn-back-panel" onclick="fecharUserPanel()">← Voltar</button>
+            <div class="user-panel-title" id="panelTitle">Usuário</div>
+            <div class="panel-actions">
+                <button class="btn-glow" onclick="editarUsuarioAtual()">✏️ Editar Usuário</button>
+                <button class="btn-danger" onclick="deletarUsuarioAtual()">🗑️ Excluir</button>
+            </div>
+        </div>
+        <div class="user-panel-body">
+            <!-- Info do User -->
+            <div class="user-info-grid" id="panelUserInfo"></div>
+
+            <!-- Sub-tabs -->
+            <nav class="subtab-nav">
+                <button class="subtab-btn active" onclick="switchSubtab('pc')" data-subtab="pc">🖥️ PC</button>
+                <button class="subtab-btn" onclick="switchSubtab('contas_user')" data-subtab="contas_user">🔐
+                    Contas</button>
+                <button class="subtab-btn" onclick="switchSubtab('emails_user')" data-subtab="emails_user">📧
+                    E-mails</button>
+                <button class="subtab-btn" onclick="switchSubtab('nas_user')" data-subtab="nas_user">💾 NAS</button>
+                <button class="subtab-btn" onclick="switchSubtab('certs_user')" data-subtab="certs_user">🔑
+                    Certs</button>
+                <button class="subtab-btn" onclick="switchSubtab('progs_user')" data-subtab="progs_user">📦
+                    Progs</button>
+            </nav>
+
+            <div class="subtab-content active" id="subtab-pc">
+                <div class="subtab-header">
+                    <h4>🖥️ PC do Usuário</h4>
+                    <button class="btn-primary" onclick="abrirModalPC(currentUserId)">✏️ Editar PC</button>
+                </div>
+                <div id="panelPC"></div>
+            </div>
+            <div class="subtab-content" id="subtab-contas_user">
+                <div class="subtab-header">
+                    <h4>🔐 Contas & Acessos</h4><button class="btn-primary" onclick="abrirModalConta()">➕
+                        Adicionar</button>
+                </div>
+                <div id="panelContas"></div>
+            </div>
+            <div class="subtab-content" id="subtab-emails_user">
+                <div class="subtab-header">
+                    <h4>📧 E-mails Vinculados</h4>
+                </div>
+                <div id="panelEmails"></div>
+            </div>
+            <div class="subtab-content" id="subtab-nas_user">
+                <div class="subtab-header">
+                    <h4>💾 Pastas NAS (Acessos)</h4>
+                </div>
+                <div id="panelNAS"></div>
+            </div>
+            <div class="subtab-content" id="subtab-certs_user">
+                <div class="subtab-header">
+                    <h4>🔑 Certificados</h4><button class="btn-primary" onclick="abrirModalCertificado()">➕
+                        Adicionar</button>
+                </div>
+                <div id="panelCerts"></div>
+            </div>
+            <div class="subtab-content" id="subtab-progs_user">
+                <div class="subtab-header">
+                    <h4>📦 Programas</h4><button class="btn-primary" onclick="abrirModalPrograma()">➕ Adicionar</button>
+                </div>
+                <div id="panelProgs"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TAB: Ativos (Global PC List) ===== -->
+    <div class="tab-content" id="tab-ativos">
+        <div class="section-header">
+            <h2>🖥️ Inventário de Ativos (PCs)</h2>
+        </div>
+        <div class="search-bar">
+            <input type="text" id="searchAtivo" placeholder="🔍 Buscar por hostname, série, patrimônio..."
+                oninput="carregarAtivos()">
+        </div>
+        <div class="table-responsive">
+            <table class="it-table" id="tabelaAtivos">
+                <thead>
+                    <tr>
+                        <th>Hostname</th>
+                        <th>Usuário</th>
+                        <th>Patrimônio</th>
+                        <th>N° Série</th>
+                        <th>Processador</th>
+                        <th>RAM</th>
+                        <th>Status</th>
+                        <th>Garantia até</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="ativosBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ===== TAB: Certificados Global ===== -->
+    <div class="tab-content" id="tab-certificados">
+        <div class="section-header">
+            <h2>🔑 Certificados & Licenças</h2>
+        </div>
+        <div class="table-responsive">
+            <table class="it-table">
+                <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Versão</th>
+                        <th>Usuário</th>
+                        <th>Validade</th>
+                        <th>Status</th>
+                        <th>Fornecedor</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="certsBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ===== TAB: E-mails Global ===== -->
+    <div class="tab-content" id="tab-emails-global">
+        <div class="section-header">
+            <h2>📧 E-mails Corporativos (Cadastro Central)</h2>
+            <div style="display:flex;gap:8px;align-items:center">
+                <input type="text" id="searchEmailGlobal" placeholder="🔍 Buscar..."
+                    style="padding:8px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#e0e4ef;font-size:13px;font-family:Inter,sans-serif"
+                    oninput="carregarEmailsGlobal()">
+                <button class="btn-primary" onclick="abrirModalEmailGlobal()">➕ Novo E-mail</button>
+            </div>
+        </div>
+        <div id="emailGlobalGrid" class="email-global-grid"></div>
+    </div>
+
+    <!-- ===== TAB: NAS Pastas ===== -->
+    <div class="tab-content" id="tab-nas">
+        <div class="section-header">
+            <h2>💾 NAS — Pastas de Rede</h2>
+            <div style="display:flex;gap:8px;align-items:center">
+                <input type="text" id="searchNAS" placeholder="🔍 Buscar pasta..."
+                    style="padding:8px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#e0e4ef;font-size:13px;font-family:Inter,sans-serif"
+                    oninput="carregarNASPastas()">
+                <button class="btn-primary" onclick="abrirModalNASPasta()">➕ Nova Pasta</button>
+            </div>
+        </div>
+        <div id="nasGrid" class="nas-grid"></div>
+    </div>
+
+    <!-- ===== TAB: Programas Global ===== -->
+    <div class="tab-content" id="tab-programas">
+        <div class="section-header">
+            <h2>📦 Inventário de Programas</h2>
+        </div>
+        <div class="table-responsive">
+            <table class="it-table">
+                <thead>
+                    <tr>
+                        <th>Programa</th>
+                        <th>Versão</th>
+                        <th>Categoria</th>
+                        <th>Usuário</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="programasBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ===== TAB: Contas Global ===== -->
+    <div class="tab-content" id="tab-contas">
+        <div class="section-header">
+            <h2>🔐 Contas & Acessos</h2>
+        </div>
+        <div class="table-responsive">
+            <table class="it-table">
+                <thead>
+                    <tr>
+                        <th>Sistema</th>
+                        <th>Usuário</th>
+                        <th>Login</th>
+                        <th>Última Revisão</th>
+                        <th>Status Revisão</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="contasBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ===== TAB: Auditoria Global ===== -->
+    <div class="tab-content" id="tab-auditoria">
+        <div class="section-header">
+            <h2>📋 Log de Auditoria Interna</h2>
+            <select id="filterAuditTabela" class="form-control" style="width:200px" onchange="carregarAuditoria()">
+                <option value="">Todas as Tabelas</option>
+                <option value="it_users">Usuários</option>
+                <option value="it_pcs">PCs</option>
+                <option value="it_contas">Contas</option>
+                <option value="it_emails_global">E-mails</option>
+                <option value="it_nas_pastas">NAS</option>
+                <option value="it_programas">Programas</option>
+                <option value="it_certificados">Certificados</option>
+                <option value="it_manutencoes">Manutenções</option>
+            </select>
+        </div>
+        <div class="table-responsive">
+            <table class="it-table">
+                <thead>
+                    <tr>
+                        <th>Data/Hora</th>
+                        <th>Usuário Sist.</th>
+                        <th>Ação</th>
+                        <th>Tabela</th>
+                        <th>Campo</th>
+                        <th>Antigo</th>
+                        <th>Novo</th>
+                    </tr>
+                </thead>
+                <tbody id="auditBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ===== TAB: Assistente IA (Ollama) ===== -->
+    <div class="tab-content" id="tab-ia">
+        <div class="section-header">
+            <h2>🤖 Assistente de TI Inteligente (Qwen3)</h2>
+            <div style="display:flex;gap:10px">
+                <button class="btn-primary" onclick="gerarAnaliseIA()" style="background:#5e35b1">✨ Análise
+                    Automática</button>
+                <button class="btn-secondary" onclick="limparChatIA()">🧹 Limpar Chat</button>
+            </div>
+        </div>
+
+        <div class="ia-layout">
+            <div class="ia-chat-container">
+                <div id="iaChatBox" class="ia-chat-box">
+                    <div class="ia-msg ai">
+                        <div class="ia-avatar">🤖</div>
+                        <div class="ia-bubble">
+                            Olá! Sou seu assistente de TI. Analiso seu inventário, segurança e conformidade ISO
+                            9001.
+                            Como posso ajudar hoje? Você pode me perguntar sobre riscos no setup ou sugestões de
+                            melhoria.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ia-input-area">
+                    <input type="text" id="iaInput" placeholder="Pergunte algo sobre seu parque tecnológico..."
+                        onkeydown="if(event.key==='Enter') enviarMensagemIA()">
+                    <button id="iaSendBtn" onclick="enviarMensagemIA()">🚀</button>
+                </div>
+            </div>
+
+            <div class="ia-sidebar">
+                <div class="ia-status-card">
+                    <h4>📡 Status da IA</h4>
+                    <div id="iaStatusMsg" style="font-size:12px;color:#7a9bc0;margin-top:5px">Conectado ao Ollama
+                        (Local)</div>
+                </div>
+                <div class="ia-hints">
+                    <h4>💡 Exemplos de Perguntas</h4>
+                    <ul>
+                        <li onclick="iaSugerir('Quais são os principais riscos de segurança no meu inventário atual?')">
+                            "Quais os riscos de segurança atuais?"</li>
+                        <li onclick="iaSugerir('Quais computadores precisam de manutenção ou substituição em breve?')">
+                            "Quem precisa de novo PC?"</li>
+                        <li onclick="iaSugerir('Como melhorar a organização de contas e certificados para auditoria?')">
+                            "Melhorias para auditoria"</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TAB: Notas ===== -->
+    <div class="tab-content" id="tab-notas">
+        <div class="section-header">
+            <h2>📝 Sticky Notes</h2>
+            <button class="btn-primary" onclick="novaStickyNote()">➕ Nova Nota</button>
+        </div>
+        <div class="search-bar">
+            <input type="text" id="searchSticky" placeholder="🔍 Buscar..." oninput="carregarSticky()">
+            <div class="tag-filters" id="tagFilters"></div>
+        </div>
+        <div class="sticky-grid" id="stickyGrid"></div>
+    </div>
+
+    <!-- ========================= MODALS ========================= -->
+
+    <!-- Modal: Novo/Editar Usuário -->
+    <div id="modalUser" class="modal">
+        <div class="modal-content modal-xl">
+            <div class="modal-header">
+                <h2 id="modalUserTitle">👤 Novo Usuário TI</h2>
+                <span class="close" onclick="fecharModal('modalUser')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="formUser" onsubmit="salvarUser(event)">
+                    <input type="hidden" id="userId">
+                    <div class="form-sections-grid">
+                        <div class="form-section-block">
+                            <h3 class="section-heading">👤 Identificação</h3>
+                            <div class="form-group"><label>Nome Completo *</label><input type="text" id="uNome"
+                                    class="form-control" required></div>
+                            <div class="form-group"><label>Cargo</label><input type="text" id="uCargo"
+                                    class="form-control"></div>
+                            <div class="form-group"><label>Setor/Departamento</label><input type="text" id="uSetor"
+                                    class="form-control"></div>
+                            <div class="form-group"><label>E-mail Corporativo</label><input type="email" id="uEmail"
+                                    class="form-control"></div>
+                        </div>
+                        <div class="form-section-block">
+                            <h3 class="section-heading">🌐 Rede</h3>
+                            <div class="form-group"><label>Ramal Telefone</label><input type="text" id="uRamal"
+                                    class="form-control"></div>
+                            <div class="form-group"><label>Cabo de Rede</label><input type="text" id="uCaboRede"
+                                    class="form-control" placeholder="Ex: Cabo-12, Rack-A-5"></div>
+                            <div class="form-group"><label>IP do PC</label><input type="text" id="uIP"
+                                    class="form-control" placeholder="192.168.x.x"></div>
+                        </div>
+                        <div class="form-section-block">
+                            <h3 class="section-heading">📑 Controle</h3>
+                            <div class="form-group"><label>Status</label>
+                                <select id="uStatus" class="form-control">
+                                    <option>Ativo</option>
+                                    <option>Inativo</option>
+                                    <option>Demitido</option>
+                                </select>
+                            </div>
+                            <div class="form-group"><label>Data de Entrada</label><input type="date" id="uDataEntrada"
+                                    class="form-control"></div>
+                            <div class="form-group"><label>Data de Saída</label><input type="date" id="uDataSaida"
+                                    class="form-control"></div>
+                            <div class="form-group"><label>Responsável TI</label><input type="text" id="uResponsavelTI"
+                                    class="form-control"></div>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top:10px"><label>Observações</label><textarea id="uObs"
+                            class="form-control" rows="2"></textarea></div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="fecharModal('modalUser')">Cancelar</button>
+                        <button type="submit" class="btn-success">💾 Salvar Usuário</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Editar PC do Usuário -->
+    <div id="modalPC" class="modal">
+        <div class="modal-content modal-xl">
+            <div class="modal-header">
+                <h2>🖥️ PC do Usuário</h2>
+                <span class="close" onclick="fecharModal('modalPC')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="formPC" onsubmit="salvarPC(event)">
+                    <input type="hidden" id="pcUserId">
+                    <div class="form-sections-grid" style="grid-template-columns:repeat(3,1fr)">
+                        <div class="form-section-block">
+                            <h3 class="section-heading">🏷️ Identificação</h3>
+                            <div class="form-group"><label>Hostname *</label><input type="text" id="pcHostname"
+                                    class="form-control" required></div>
+                            <div class="form-group"><label>Nº de Série</label><input type="text" id="pcNumSerie"
+                                    class="form-control"></div>
+                            <div class="form-group"><label>Nº Patrimônio</label><input type="text" id="pcNumPatrimonio"
+                                    class="form-control"></div>
+                            <div class="form-group"><label>Fabricante</label><input type="text" id="pcFabricante"
+                                    class="form-control"></div>
+                            <div class="form-group"><label>Modelo</label><input type="text" id="pcModelo"
+                                    class="form-control"></div>
+                        </div>
+                        <div class="form-section-block">
+                            <h3 class="section-heading">📅 Ciclo de Vida</h3>
+                            <div class="form-group"><label>Data de Compra</label><input type="date" id="pcDataCompra"
+                                    class="form-control"></div>
+                            <div class="form-group"><label>Garantia até</label><input type="date" id="pcDataGarantiafim"
+                                    class="form-control"></div>
+                            <div class="form-group"><label>Status</label>
+                                <select id="pcStatus" class="form-control">
+                                    <option>Em Uso</option>
+                                    <option>Manutenção</option>
+                                    <option>Disponível</option>
+                                    <option>Descartado</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-section-block">
+                            <h3 class="section-heading">⚙️ Hardware</h3>
+                            <div class="form-group"><label>Processador</label><input type="text" id="pcProcessador"
+                                    class="form-control" placeholder="Ex: Intel i5-12400"></div>
+                            <div class="form-group"><label>RAM</label><input type="text" id="pcRam" class="form-control"
+                                    placeholder="Ex: 16GB DDR4"></div>
+                            <div class="form-group"><label>Placa Mãe</label><input type="text" id="pcPlacaMae"
+                                    class="form-control"></div>
+                            <div class="form-group"><label>Placa de Vídeo</label><input type="text" id="pcPlacaVideo"
+                                    class="form-control"></div>
+                            <div class="form-group"><label>Placa de Rede</label><input type="text" id="pcPlacaRede"
+                                    class="form-control"></div>
+                            <div class="form-group"><label>Fonte</label><input type="text" id="pcFonte"
+                                    class="form-control"></div>
+                        </div>
+                        <div class="form-section-block">
+                            <h3 class="section-heading">🖱️ Periféricos</h3>
+                            <div class="form-group"><label>Monitor</label><input type="text" id="pcMonitor"
+                                    class="form-control"></div>
+                            <div class="form-group"><label>Mouse</label><input type="text" id="pcMouse"
+                                    class="form-control"></div>
+                            <div class="form-group"><label>Mouse Pad</label><input type="text" id="pcMousePad"
+                                    class="form-control"></div>
+                            <div class="form-group"><label>Teclado</label><input type="text" id="pcTeclado"
+                                    class="form-control"></div>
+                            <div class="form-group"><label>Gabinete</label><input type="text" id="pcGabinete"
+                                    class="form-control"></div>
+                        </div>
+                        <div class="form-section-block" style="grid-column:span 2">
+                            <h3 class="section-heading">💿 Armazenamento</h3>
+                            <div class="form-group"><label>HDDs/SSDs</label><textarea id="pcHdds" class="form-control"
+                                    rows="3" placeholder="Ex: SSD 500GB Samsung, HDD 1TB Seagate..."></textarea></div>
+                            <div class="form-group"><label>Observações</label><textarea id="pcObs" class="form-control"
+                                    rows="2"></textarea></div>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="fecharModal('modalPC')">Cancelar</button>
+                        <button type="submit" class="btn-success">💾 Salvar PC</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Conta -->
+    <div id="modalConta" class="modal">
+        <div class="modal-content modal-medium">
+            <div class="modal-header">
+                <h2 id="modalContaTitle">🔐 Nova Conta</h2><span class="close"
+                    onclick="fecharModal('modalConta')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="formConta" onsubmit="salvarConta(event)">
+                    <input type="hidden" id="contaId">
+                    <div class="form-group"><label>Sistema *</label>
+                        <select id="cSistema" class="form-control" required onchange="toggleCustomSistema()">
+                            <option>AnyDesk</option>
+                            <option>ERP Corporativo</option>
+                            <option>NAS</option>
+                            <option>Central Impacta</option>
+                            <option>Win Server</option>
+                            <option>Outro</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="customSistemaGroup" style="display:none"><label>Nome do
+                            Sistema</label><input type="text" id="cNomeCustom" class="form-control"></div>
+                    <div class="form-group"><label>Login</label>
+                        <div class="input-copy"><input type="text" id="cLogin" class="form-control"><button
+                                type="button" onclick="copiar('cLogin')">📋</button></div>
+                    </div>
+                    <div class="form-group"><label>Senha</label>
+                        <div class="input-copy">
+                            <input type="password" id="cSenha" class="form-control">
+                            <button type="button" onclick="togglePassword('cSenha')">👁️</button>
+                            <button type="button" onclick="copiar('cSenha')">📋</button>
+                        </div>
+                    </div>
+                    <div class="form-group"><label>Acessos / Permissões</label><textarea id="cAcessos"
+                            class="form-control" rows="3"></textarea></div>
+                    <div class="form-group"><label>Última Revisão</label><input type="date" id="cRevisao"
+                            class="form-control"></div>
+                    <div class="form-group"><label>Observações</label><textarea id="cObs" class="form-control"
+                            rows="2"></textarea></div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary"
+                            onclick="fecharModal('modalConta')">Cancelar</button>
+                        <button type="submit" class="btn-success">💾 Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: E-mail -->
+    <div id="modalEmail" class="modal">
+        <div class="modal-content modal-medium">
+            <div class="modal-header">
+                <h2 id="modalEmailTitle">📧 Novo E-mail</h2><span class="close"
+                    onclick="fecharModal('modalEmail')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="formEmail" onsubmit="salvarEmail(event)">
+                    <input type="hidden" id="emailId">
+                    <div class="form-group"><label>Endereço *</label><input type="email" id="eEndereco"
+                            class="form-control" required></div>
+                    <div class="form-group"><label>Servidor/Cliente</label><input type="text" id="eServidor"
+                            class="form-control" placeholder="Thunderbird, Outlook..."></div>
+                    <div class="form-group"><label>Login</label>
+                        <div class="input-copy"><input type="text" id="eLogin" class="form-control"><button
+                                type="button" onclick="copiar('eLogin')">📋</button></div>
+                    </div>
+                    <div class="form-group"><label>Senha</label>
+                        <div class="input-copy">
+                            <input type="password" id="eSenha" class="form-control">
+                            <button type="button" onclick="togglePassword('eSenha')">👁️</button>
+                            <button type="button" onclick="copiar('eSenha')">📋</button>
+                        </div>
+                    </div>
+                    <div class="form-group"><label>Observações</label><textarea id="eObs" class="form-control"
+                            rows="2"></textarea></div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary"
+                            onclick="fecharModal('modalEmail')">Cancelar</button>
+                        <button type="submit" class="btn-success">💾 Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Certificado -->
+    <div id="modalCertificado" class="modal">
+        <div class="modal-content modal-medium">
+            <div class="modal-header">
+                <h2 id="modalCertTitle">🔑 Novo Certificado</h2><span class="close"
+                    onclick="fecharModal('modalCertificado')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="formCertificado" onsubmit="salvarCertificado(event)">
+                    <input type="hidden" id="certId">
+                    <div class="form-group"><label>Tipo *</label>
+                        <select id="certTipo" class="form-control" required onchange="toggleCertOutro()">
+                            <option>Windows</option>
+                            <option>Office</option>
+                            <option>ESET</option>
+                            <option>Certificado Digital</option>
+                            <option>Fusion</option>
+                            <option>Outro</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="certOutroGroup" style="display:none"><label>Nome</label><input
+                            type="text" id="certNomeOutro" class="form-control"></div>
+                    <div class="form-group"><label>Versão / Ano</label><input type="text" id="certVersao"
+                            class="form-control" placeholder="Ex: 11 Pro, 2021..."></div>
+                    <div class="form-group"><label>Chave / Serial</label>
+                        <div class="input-copy"><input type="text" id="certChave" class="form-control"><button
+                                type="button" onclick="copiar('certChave')">📋</button></div>
+                    </div>
+                    <div class="form-group"><label>Validade</label><input type="date" id="certValidade"
+                            class="form-control"></div>
+                    <div class="form-group"><label>Fornecedor</label><input type="text" id="certFornecedor"
+                            class="form-control"></div>
+                    <div class="form-group"><label>Observações</label><textarea id="certObs" class="form-control"
+                            rows="2"></textarea></div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary"
+                            onclick="fecharModal('modalCertificado')">Cancelar</button>
+                        <button type="submit" class="btn-success">💾 Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Programa -->
+    <div id="modalPrograma" class="modal">
+        <div class="modal-content modal-medium">
+            <div class="modal-header">
+                <h2 id="modalProgTitle">📦 Novo Programa</h2><span class="close"
+                    onclick="fecharModal('modalPrograma')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="formPrograma" onsubmit="salvarPrograma(event)">
+                    <input type="hidden" id="progId">
+                    <div class="form-group"><label>Nome *</label><input type="text" id="pNome" class="form-control"
+                            required></div>
+                    <div class="form-group"><label>Versão</label><input type="text" id="pVersao" class="form-control">
+                    </div>
+                    <div class="form-group"><label>Chave</label>
+                        <div class="input-copy"><input type="text" id="pChave" class="form-control"><button
+                                type="button" onclick="copiar('pChave')">📋</button></div>
+                    </div>
+                    <div class="form-group"><label>Categoria</label>
+                        <select id="pCategoria" class="form-control">
+                            <option>Escritório</option>
+                            <option>Design</option>
+                            <option>Engenharia</option>
+                            <option>ERP</option>
+                            <option>Segurança</option>
+                            <option>Desenvolvimento</option>
+                            <option>Comunicação</option>
+                            <option>Utilitário</option>
+                            <option>Outro</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Observações</label><textarea id="pObs" class="form-control"
+                            rows="2"></textarea></div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary"
+                            onclick="fecharModal('modalPrograma')">Cancelar</button>
+                        <button type="submit" class="btn-success">💾 Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Sticky Note -->
+    <div id="modalSticky" class="modal">
+        <div class="modal-content modal-medium">
+            <div class="modal-header">
+                <h2 id="modalStickyTitle">📝 Nova Nota</h2><span class="close"
+                    onclick="fecharModal('modalSticky')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="formSticky" onsubmit="salvarSticky(event)">
+                    <input type="hidden" id="stickyId">
+                    <div class="form-group"><label>Título</label><input type="text" id="sTitulo" class="form-control">
+                    </div>
+                    <div class="form-group"><label>Conteúdo *</label><textarea id="sConteudo" class="form-control"
+                            rows="5" required></textarea></div>
+                    <div class="form-group"><label>Tags (vírgula)</label><input type="text" id="sTags"
+                            class="form-control" placeholder="senha, rede, backup..."></div>
+                    <div class="form-group"><label>Cor</label>
+                        <div class="color-palette">
+                            <div class="color-dot color-yellow" data-color="yellow" onclick="selectColor('yellow')">
+                            </div>
+                            <div class="color-dot color-blue" data-color="blue" onclick="selectColor('blue')"></div>
+                            <div class="color-dot color-green" data-color="green" onclick="selectColor('green')">
+                            </div>
+                            <div class="color-dot color-pink" data-color="pink" onclick="selectColor('pink')"></div>
+                            <div class="color-dot color-purple" data-color="purple" onclick="selectColor('purple')">
+                            </div>
+                            <div class="color-dot color-orange" data-color="orange" onclick="selectColor('orange')">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary"
+                            onclick="fecharModal('modalSticky')">Cancelar</button>
+                        <button type="submit" class="btn-success">💾 Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: E-mail Global (create/edit) -->
+    <div id="modalEmailGlobal" class="modal">
+        <div class="modal-content modal-medium">
+            <div class="modal-header">
+                <h2 id="modalEmailGlobalTitle">📧 Novo E-mail</h2>
+                <span class="close" onclick="fecharModal('modalEmailGlobal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="formEmailGlobal" onsubmit="salvarEmailGlobal(event)">
+                    <input type="hidden" id="emailGlobalId">
+                    <div class="form-group"><label>Endereço *</label><input type="email" id="egEndereco"
+                            class="form-control" required placeholder="usuario@empresa.com"></div>
+                    <div class="form-group"><label>Tipo</label>
+                        <select id="egTipo" class="form-control">
+                            <option value="Corporativo">Corporativo</option>
+                            <option value="Suporte">Suporte / Setor</option>
+                            <option value="Pessoal">Pessoal</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Servidor / Cliente</label><input type="text" id="egServidor"
+                            class="form-control" placeholder="Thunderbird, Outlook, Webmail..."></div>
+                    <div class="form-group"><label>Login</label>
+                        <div class="input-copy"><input type="text" id="egLogin" class="form-control"><button
+                                type="button" onclick="copiar('egLogin')">📋</button></div>
+                    </div>
+                    <div class="form-group"><label>Senha</label>
+                        <div class="input-copy">
+                            <input type="password" id="egSenha" class="form-control">
+                            <button type="button" onclick="togglePassword('egSenha')">👁️</button>
+                            <button type="button" onclick="copiar('egSenha')">📋</button>
+                        </div>
+                    </div>
+                    <div class="form-group"><label>Observações</label><textarea id="egObs" class="form-control"
+                            rows="2"></textarea></div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary"
+                            onclick="fecharModal('modalEmailGlobal')">Cancelar</button>
+                        <button type="submit" class="btn-success">💾 Salvar E-mail</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Vincular E-mail ao Usuário -->
+    <div id="modalEmailVinculo" class="modal">
+        <div class="modal-content modal-medium">
+            <div class="modal-header">
+                <h2>🔗 Vincular E-mail ao Usuário</h2>
+                <span class="close" onclick="fecharModal('modalEmailVinculo')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="formEmailVinculo" onsubmit="salvarEmailVinculo(event)">
+                    <input type="hidden" id="emailVinculoEmailId">
+                    <div id="emailVinculoEmailDisplay"
+                        style="margin-bottom:14px;padding:10px;background:rgba(25,118,210,0.1);border-radius:8px;color:#90caf9;font-weight:600">
+                    </div>
+                    <div class="form-group"><label>Usuário *</label>
+                        <select id="evUserId" class="form-control" required>
+                            <option value="">— Selecione o usuário —</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>PC / Hostname</label><input type="text" id="evHostname"
+                            class="form-control" placeholder="Ex: PC-JOAO (opcional)"></div>
+                    <div class="form-group"><label>Cliente de E-mail</label><input type="text" id="evClienteEmail"
+                            class="form-control" placeholder="Thunderbird, Outlook, Webmail..."></div>
+                    <div class="form-group"><label>Observações</label><textarea id="evObs" class="form-control"
+                            rows="2"></textarea></div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary"
+                            onclick="fecharModal('modalEmailVinculo')">Cancelar</button>
+                        <button type="submit" class="btn-success">🔗 Vincular</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: NAS Pasta (create/edit) -->
+    <div id="modalNASPasta" class="modal">
+        <div class="modal-content modal-medium">
+            <div class="modal-header">
+                <h2 id="modalNASTitle">💾 Nova Pasta NAS</h2>
+                <span class="close" onclick="fecharModal('modalNASPasta')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="formNASPasta" onsubmit="salvarNASPasta(event)">
+                    <input type="hidden" id="nasPastaId">
+                    <div class="form-group"><label>Nome da Pasta *</label><input type="text" id="npNome"
+                            class="form-control" required placeholder="Ex: Projetos, RH, Financeiro..."></div>
+                    <div class="form-group"><label>Caminho de Rede</label><input type="text" id="npCaminho"
+                            class="form-control" placeholder="\\SERVIDOR\Projetos ou \\192.168.x.x\pasta"></div>
+                    <div class="form-group"><label>Descrição</label><textarea id="npDescricao" class="form-control"
+                            rows="2" placeholder="Para que serve esta pasta..."></textarea></div>
+                    <div class="form-group"><label>Observações</label><textarea id="npObs" class="form-control"
+                            rows="2"></textarea></div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary"
+                            onclick="fecharModal('modalNASPasta')">Cancelar</button>
+                        <button type="submit" class="btn-success">💾 Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: NAS Acesso (dar acesso ao usuário) -->
+    <div id="modalNASAcesso" class="modal">
+        <div class="modal-content modal-medium">
+            <div class="modal-header">
+                <h2>🔗 Dar Acesso à Pasta</h2>
+                <span class="close" onclick="fecharModal('modalNASAcesso')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="formNASAcesso" onsubmit="salvarNASAcesso(event)">
+                    <input type="hidden" id="nasAcessoPastaId">
+                    <div id="nasAcessoPastaDisplay"
+                        style="margin-bottom:14px;padding:10px;background:rgba(25,118,210,0.1);border-radius:8px;color:#90caf9;font-weight:600">
+                    </div>
+                    <div class="form-group"><label>Usuário *</label>
+                        <select id="naUserId" class="form-control" required>
+                            <option value="">— Selecione o usuário —</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Letra Mapeada</label><input type="text" id="naLetra"
+                            class="form-control" placeholder="Ex: G:, H:, Z:" maxlength="3"></div>
+                    <div class="form-group"><label>Permissão</label>
+                        <select id="naPermissao" class="form-control">
+                            <option value="Leitura">📖 Leitura</option>
+                            <option value="Escrita">✏️ Leitura e Escrita</option>
+                            <option value="Admin">👑 Administrador</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Observações</label><textarea id="naObs" class="form-control"
+                            rows="2"></textarea></div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary"
+                            onclick="fecharModal('modalNASAcesso')">Cancelar</button>
+                        <button type="submit" class="btn-success">🔗 Dar Acesso</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='it_control.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // ── LÓGICA DE ATUALIZAÇÃO ──────────────────────────
+            const CURRENT_VERSION = "1.3.0";
+            async function checkVersion() {
+                try {
+                    const res = await fetch('/api/app-version');
+                    const data = await res.json();
+                    if (data.version !== CURRENT_VERSION) {
+                        const banner = document.getElementById('updateBanner');
+                        const btn = document.getElementById('updateBtn');
+                        if (banner && btn) {
+                            banner.style.display = 'block';
+                            btn.onclick = () => {
+                                if (window.electronAPI) {
+                                    btn.disabled = true; btn.textContent = "Baixando...";
+                                    window.electronAPI.startUpdate(encodeURI(data.url));
+                                } else { window.location.href = data.url; }
+                            };
+                        }
+                    }
+                } catch (e) { }
+            }
+            checkVersion();
+        });
+    </script>
+    <div class="ver-badge">v1.3.0</div>
+</body>
+
+</html>

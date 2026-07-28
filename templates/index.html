@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Helpdesk</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
+    <style>
+        /* Banner de Atualização */
+        #updateBanner {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #5865f2;
+            color: #fff;
+            padding: 12px;
+            text-align: center;
+            z-index: 10000;
+            font-size: 14px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            font-weight: 600;
+        }
+
+        .btn-update {
+            background: #fff;
+            color: #5865f2;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-weight: 700;
+            margin-left: 15px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-update:hover {
+            background: #f3f4f6;
+            transform: scale(1.05);
+        }
+
+        .btn-update:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        /* Versão no Rodapé (Super Visível) */
+        .ver-badge {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 12px;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 4px 10px;
+            border-radius: 6px;
+            z-index: 10000;
+            font-weight: 700;
+            pointer-events: none;
+            font-family: sans-serif;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="updateBanner">
+        🚀 Uma nova versão do HelpDesk está disponível!
+        <button class="btn-update" id="updateBtn">Atualizar Agora</button>
+    </div>
+    <div class="header">
+        <h1>🎫 Sistema de Helpdesk</h1>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="nav('{{ url_for('portal') }}')" style="background-color: #4b5563;">
+                🏠 Voltar ao Portal
+            </button>
+            <button onclick="nav('{{ url_for('chat') }}')" style="background-color: #5865f2;">
+                💬 Chat Interno
+            </button>
+            <button onclick="nav('/login?next=/dashboard')" style="background-color: #f59e0b;">
+                🦺 Acesso Admin
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="box">
+            <h2>📝 Abrir Chamado</h2>
+            <form id="ticketForm">
+                <div class="form-group">
+                    <label>Nome do Funcionário:</label>
+                    <input type="text" id="nome" required placeholder="Digite seu nome">
+                </div>
+
+                <div class="form-group">
+                    <label>Descrição do Problema:</label>
+                    <textarea class="descricaocss" id="descricao" required
+                        placeholder="Descreva detalhadamente o problema..."></textarea>
+                </div>
+
+                <button type="submit">📨 Abrir Chamado</button>
+            </form>
+            <div id="ticketResult"></div>
+        </div>
+
+        <!-- <div class="box">
+            <h2>🤖 Chat de Suporte IA</h2>
+            <div class="chat-box" id="chatBox">
+                <div class="message bot-message">
+                    <strong>🤖 Assistente:</strong><br>
+                    Olá! Sou seu assistente técnico.<br>
+                    <em>Digite sua pergunta abaixo!</em>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="chatInput" placeholder="Ex: Computador não liga..." onkeypress="handleEnter(event)">
+                <button onclick="sendChatMessage()" id="sendBtn">📤 Enviar</button>
+            </div>
+            <small>🚀</small>
+        </div> -->
+    </div>
+
+    <div class="ver-badge" id="appVersionLabel">v1.3.0</div>
+
+    <script>
+        function nav(url) {
+            window.location.href = url;
+        }
+
+        // Submissão do formulário de ticket
+        document.getElementById('ticketForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const button = e.target.querySelector('button');
+            const originalText = button.textContent;
+            button.textContent = '⏳ Criando...';
+            button.disabled = true;
+
+            const formData = {
+                nome: document.getElementById('nome').value,
+                descricao: document.getElementById('descricao').value
+            };
+
+            try {
+                const response = await fetch('/api/tickets', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+                const resultDiv = document.getElementById('ticketResult');
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <strong>✅ Chamado criado com sucesso!</strong><br>
+                        <strong>ID:</strong> ${result.ticket_id}<br>
+                        <strong>Data:</strong> ${result.timestamp}<br>
+                        <em>Guarde este ID para acompanhamento.</em>
+                    `;
+                    resultDiv.style.display = 'block';
+                    document.getElementById('ticketForm').reset();
+                } else {
+                    resultDiv.innerHTML = `<strong>❌ Erro:</strong> ${result.error}`;
+                    resultDiv.style.backgroundColor = '#4a1f1f';
+                    resultDiv.style.borderColor = '#dc3545';
+                    resultDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao criar chamado. Tente novamente.');
+            } finally {
+                button.textContent = originalText;
+                button.disabled = false;
+            }
+        });
+
+        // Histórico do chat desabilitado
+
+        // Chat functions
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            const chatBox = document.getElementById('chatBox');
+            const sendBtn = document.getElementById('sendBtn');
+
+            // Adiciona mensagem do usuário
+            chatBox.innerHTML += `
+                <div class="message user-message">
+                    <strong>👤 Você:</strong> ${message}
+                </div>
+            `;
+
+            input.value = '';
+            sendBtn.textContent = '🤔 Pensando...';
+            sendBtn.disabled = true;
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: message })
+                });
+
+                const result = await response.json();
+
+                // Adiciona resposta da IA
+                chatBox.innerHTML += `
+                    <div class="message bot-message">
+                        <strong>🤖 Assistente:</strong><br>
+                        <div style="margin-top: 5px;">${result.response}</div>
+                        <small>⏱️ ${result.response_time || '🤖'}</small>
+                    </div>
+                `;
+
+            } catch (error) {
+                chatBox.innerHTML += `
+                    <div class="message bot-message">
+                        <strong>❌ Erro:</strong> Não foi possível processar sua pergunta. Tente novamente.
+                    </div>
+                `;
+            } finally {
+                sendBtn.textContent = '📤 Enviar';
+                sendBtn.disabled = false;
+            }
+        }
+
+        // Enter para enviar
+        function handleEnter(event) {
+            if (event.key === 'Enter') {
+                sendChatMessage();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // ── VERSÃO E BANNER (auto-detect, sem hardcode) ─────────────────
+            const versionLabel = document.getElementById('appVersionLabel');
+
+            async function checkVersion() {
+                try {
+                    const res = await fetch('/api/app-version');
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    if (!data.url) return;
+
+                    const installedVersion = window.electronAPI ? window.electronAPI.getAppVersion() : '1.0.0';
+                    if (versionLabel) versionLabel.textContent = `Versão: ${installedVersion}`;
+
+                    const lastSeen = localStorage.getItem('hd_last_version') || '';
+                    if (data.version && data.version !== installedVersion && data.version !== lastSeen) {
+                        const banner = document.getElementById('updateBanner');
+                        const btn = document.getElementById('updateBtn');
+                        if (banner && btn) {
+                            banner.style.display = 'block';
+                            btn.onclick = () => {
+                                if (window.electronAPI) {
+                                    btn.disabled = true;
+                                    btn.textContent = "Preparando...";
+                                    window.electronAPI.startUpdate(encodeURI(data.url));
+
+                                    window.electronAPI.onUpdateProgress((p) => {
+                                        const pct = p < 0
+                                            ? `${(Math.abs(p) / 1048576).toFixed(1)} MB`
+                                            : `${Math.round(p * 100)}%`;
+                                        btn.textContent = `Baixando: ${pct}...`;
+                                        if (p >= 1) btn.textContent = "Finalizando download...";
+                                    });
+
+                                    window.electronAPI.onUpdateError((msg) => {
+                                        btn.disabled = false;
+                                        btn.textContent = "Erro: " + msg;
+                                        alert("Erro na atualização: " + msg);
+                                        setTimeout(() => { btn.textContent = "Tentar Novamente"; btn.disabled = false; }, 3000);
+                                    });
+                                } else {
+                                    localStorage.setItem('hd_last_version', data.version);
+                                    window.location.href = data.url;
+                                }
+                            };
+                        }
+                    }
+                } catch (e) { console.log("Erro check version:", e); }
+            }
+            checkVersion();
+        });
+    </script>
+</body>
+
+</html>

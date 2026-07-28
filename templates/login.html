@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Helpdesk - Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+    <style>
+        #updateBanner {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #5865f2;
+            color: #fff;
+            padding: 10px;
+            text-align: center;
+            z-index: 10000;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-update {
+            background: #fff;
+            color: #5865f2;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: 700;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+
+        .ver-badge {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 12px;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 4px 10px;
+            border-radius: 6px;
+            z-index: 10000;
+            font-weight: 700;
+            pointer-events: none;
+            font-family: sans-serif;
+        }
+
+        /* Remember Me */
+        .remember-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 6px 0 14px 0;
+            font-size: 13px;
+            color: #b9bbbe;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .remember-row input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #5865f2;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="updateBanner">
+        🚀 Nova versão disponível! <button class="btn-update" id="updateBtn">Atualizar</button>
+    </div>
+    <div class="box">
+        <h2>🔐 Login</h2>
+        <div class="form-group">
+            <label for="username">Usuário</label>
+            <input type="text" id="username" placeholder="Digite seu usuário" autocomplete="username">
+        </div>
+
+        <div class="form-group">
+            <label for="password">Senha</label>
+            <input type="password" id="password" placeholder="Digite sua senha" autocomplete="current-password">
+        </div>
+
+        <label class="remember-row">
+            <input type="checkbox" id="rememberMe"> Salvar login e senha
+        </label>
+
+        <button onclick="login()">Entrar</button>
+        <button onclick="voltar()">⬅ Voltar</button>
+
+        <div id="loginMessage"></div>
+    </div>
+
+    <div class="ver-badge" id="appVersionLabel">v1.3.0</div>
+
+    <script>
+        // ── REMEMBER ME ────────────────────────────────────────────────
+        const STORAGE_KEY = 'hd_saved_login';
+
+        function loadSavedCredentials() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+                if (saved && saved.username) {
+                    document.getElementById('username').value = saved.username;
+                    document.getElementById('password').value = saved.password || '';
+                    document.getElementById('rememberMe').checked = true;
+                }
+            } catch (e) {}
+        }
+
+        function handleRemember(username, password) {
+            if (document.getElementById('rememberMe').checked) {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({ username, password }));
+            } else {
+                localStorage.removeItem(STORAGE_KEY);
+            }
+        }
+
+        // Limpa credenciais ao desmarcar
+        document.addEventListener('DOMContentLoaded', function () {
+            loadSavedCredentials();
+
+            document.getElementById('rememberMe').addEventListener('change', function () {
+                if (!this.checked) localStorage.removeItem(STORAGE_KEY);
+            });
+        });
+
+        // ── LOGIN COM REDIRECT CORRETO ──────────────────────────────────
+        async function login() {
+            const username = document.getElementById("username").value.trim();
+            const password = document.getElementById("password").value;
+            const msgBox = document.getElementById("loginMessage");
+
+            if (!username || !password) {
+                msgBox.style.display = "block";
+                msgBox.className = "error";
+                msgBox.innerText = "⚠️ Preencha usuário e senha!";
+                return;
+            }
+
+            // Lê ?next= da URL atual para repassar ao Flask
+            const nextParam = new URLSearchParams(window.location.search).get('next') || '/';
+
+            try {
+                const response = await fetch(`/login?next=${encodeURIComponent(nextParam)}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Salva ou limpa credenciais conforme checkbox
+                    handleRemember(username, password);
+
+                    msgBox.style.display = "block";
+                    msgBox.className = "success";
+                    msgBox.innerText = "✅ Login realizado com sucesso!";
+
+                    setTimeout(() => { window.location.href = data.redirect || nextParam; }, 600);
+                } else {
+                    msgBox.style.display = "block";
+                    msgBox.className = "error";
+                    msgBox.innerText = "❌ " + data.message;
+                }
+            } catch (err) {
+                msgBox.style.display = "block";
+                msgBox.className = "error";
+                msgBox.innerText = "❌ Erro de conexão com o servidor!";
+            }
+        }
+
+        function voltar() {
+            window.location.href = "/";
+        }
+
+        // Enter nos campos
+        document.addEventListener('DOMContentLoaded', function () {
+            const u = document.getElementById('username');
+            const p = document.getElementById('password');
+            [u, p].forEach(i => {
+                if (i) i.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+            });
+
+            // ── BANNER DE ATUALIZAÇÃO (auto-detect, sem hardcode) ──────
+            const versionLabel = document.getElementById('appVersionLabel');
+
+            async function checkVersion() {
+                try {
+                    const res = await fetch('/api/app-version');
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    if (!data.url) return;
+
+                    const installedVersion = window.electronAPI ? window.electronAPI.getAppVersion() : '1.0.0';
+                    if (versionLabel) versionLabel.textContent = `v${installedVersion}`;
+
+                    // Mostra banner se a versão do servidor for diferente da instalada
+                    const lastSeen = localStorage.getItem('hd_last_version') || '';
+                    if (data.version && data.version !== installedVersion && data.version !== lastSeen) {
+                        const banner = document.getElementById('updateBanner');
+                        const btn = document.getElementById('updateBtn');
+                        if (banner && btn) {
+                            banner.style.display = 'block';
+                            btn.onclick = () => {
+                                if (window.electronAPI) {
+                                    btn.disabled = true;
+                                    btn.textContent = "Baixando...";
+                                    window.electronAPI.startUpdate(encodeURI(data.url));
+                                    window.electronAPI.onUpdateProgress((p) => {
+                                        const pct = p < 0 ? `${(Math.abs(p) / 1048576).toFixed(1)} MB` : `${Math.round(p * 100)}%`;
+                                        btn.textContent = `Baixando ${pct}...`;
+                                        if (p >= 1) btn.textContent = "Preparando instalação...";
+                                    });
+                                    window.electronAPI.onUpdateError((msg) => {
+                                        btn.disabled = false;
+                                        btn.textContent = "Erro: " + msg;
+                                        setTimeout(() => { btn.textContent = "Tentar Novamente"; btn.disabled = false; }, 3000);
+                                    });
+                                } else {
+                                    // Salva versão para não mostrar novamente no browser
+                                    localStorage.setItem('hd_last_version', data.version);
+                                    window.location.href = data.url;
+                                }
+                            };
+                        }
+                    }
+                } catch (e) {}
+            }
+            checkVersion();
+        });
+    </script>
+</body>
+
+</html>

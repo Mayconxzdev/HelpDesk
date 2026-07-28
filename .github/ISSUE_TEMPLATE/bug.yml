@@ -1,0 +1,42 @@
+name: Relatar bug
+description: Registre um comportamento reproduzível do HelpDesk.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Resumo
+      description: O que aconteceu e qual era o comportamento esperado?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Como reproduzir
+      placeholder: |
+        1. Acesse...
+        2. Clique...
+        3. Observe...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área
+      options:
+        - Autenticação
+        - HelpDesk / chamados
+        - IT Control
+        - Chat / Socket.IO
+        - Atalhos
+        - Electron
+        - IA local
+        - Outro
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidências sanitizadas
+      description: Inclua prints ou logs sem nomes reais, credenciais, tokens ou endereços internos.
