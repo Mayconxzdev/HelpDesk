@@ -170,7 +170,7 @@ python scripts/validate_public_release.py
 python scripts/check_markdown_links.py
 ruff check .
 python -m compileall -q app.py ia.py security_utils.py tests scripts
-pytest -q
+python -m pytest -q
 cd hd_electron && npm ci --ignore-scripts && npm run check
 ```
 

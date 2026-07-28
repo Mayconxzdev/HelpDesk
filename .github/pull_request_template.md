@@ -11,7 +11,7 @@
 - [ ] `python scripts/validate_public_release.py`
 - [ ] `python scripts/check_markdown_links.py`
 - [ ] `ruff check .`
-- [ ] `pytest -q`
+- [ ] `python -m pytest -q`
 - [ ] `cd hd_electron && npm run check`
 - [ ] Documentação e screenshots atualizados, quando aplicável
 

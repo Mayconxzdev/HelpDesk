@@ -57,7 +57,7 @@ jobs:
           DATABASE_URL: sqlite:///instance/helpdesk-ci.db
           ENABLE_DEMO_AUTH: "true"
           SOCKETIO_ASYNC_MODE: threading
-        run: pytest -q
+        run: python -m pytest -q
 
   electron:
     name: Electron · syntax and security contracts

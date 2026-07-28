@@ -46,7 +46,7 @@ O valor do projeto está na integração de jornadas que normalmente ficam espal
 2. Leia o [problema e as jornadas](docs/PORTFOLIO_CASE_STUDY.md).
 3. Confira as [decisões de arquitetura](docs/ARCHITECTURE.md).
 4. Analise as [correções de segurança](docs/SECURITY.md).
-5. Execute `python scripts/validate_public_release.py`, `pytest -q` e `npm run check`.
+5. Execute `python scripts/validate_public_release.py`, `python -m pytest -q` e `npm run check`.
 
 ---
 
@@ -292,7 +292,7 @@ python scripts/validate_public_release.py
 python scripts/check_markdown_links.py
 ruff check .
 python -m compileall -q app.py ia.py security_utils.py tests scripts
-pytest -q
+python -m pytest -q
 
 cd hd_electron
 npm ci --ignore-scripts
