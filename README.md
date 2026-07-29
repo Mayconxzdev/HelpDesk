@@ -36,9 +36,18 @@ O valor do projeto está na integração de jornadas que normalmente ficam espal
 - SQLite para desenvolvimento e PostgreSQL por configuração;
 - campos sensíveis cifrados e mascarados nas respostas comuns;
 - integração opcional com Ollama, Redis e busca local por contexto;
+- O funcionamento principal do sistema não depende de IA. Ollama, Redis e recuperação textual avançada são integrações opcionais: quando não estão configuradas, chamados, ativos, acessos, chat e auditoria continuam disponíveis.
 - testes, lint crítico, validação de distribuição pública, CI e CodeQL.
 
 > **Escopo:** projeto de portfólio e referência técnica. Não representa certificação ISO 9001, produto SaaS público ou ambiente homologado para armazenar credenciais reais. As limitações estão descritas em [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md).
+
+### Estado operacional
+
+A versão interna está instalada nos computadores da empresa e é utilizada por **11 pessoas** para abertura e acompanhamento de chamados, consulta de ativos, gestão de acessos e comunicação interna.
+
+Este repositório contém uma edição pública sanitizada. Dados operacionais, credenciais, nomes, endereços internos, registros empresariais e configurações de infraestrutura foram removidos ou substituídos por exemplos fictícios.
+
+O HelpDesk continuará ativo durante a transição. Quando o **Portal Vesper** concluir a consolidação dos processos, suas funcionalidades serão incorporadas ao módulo de TI do Portal, preservando histórico, rastreabilidade e regras de acesso.
 
 ## Caminho de avaliação em 5 minutos
 
