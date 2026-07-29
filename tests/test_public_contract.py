@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 from pathlib import Path
+import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -22,16 +23,18 @@ def test_all_rendered_templates_exist():
 def test_no_public_runtime_artifacts_are_committed():
     forbidden_suffixes = {".db", ".sqlite", ".sqlite3", ".pkl", ".pyc", ".pyo"}
     forbidden_directories = {"__pycache__", ".pytest_cache", ".ruff_cache"}
-    committed_files = [
-        path
-        for path in ROOT.rglob("*")
-        if path.is_file() and path.suffix.lower() in forbidden_suffixes
-    ]
+    tracked_paths = subprocess.run(
+        ["git", "-C", str(ROOT), "ls-files", "-z"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.split("\0")
+
+    committed_files = [path for path in tracked_paths if Path(path).suffix.lower() in forbidden_suffixes]
     committed_directories = [
-        path
-        for path in ROOT.rglob("*")
-        if path.is_dir() and path.name in forbidden_directories
+        path for path in tracked_paths if forbidden_directories.intersection(Path(path).parts)
     ]
+
     assert committed_files == []
     assert committed_directories == []
 
