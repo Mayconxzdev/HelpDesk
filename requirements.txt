@@ -4,7 +4,7 @@ Flask-SQLAlchemy==3.1.1
 SQLAlchemy>=2.0.40,<3
 Werkzeug>=3.1.8,<4
 requests>=2.32.5,<3
-python-dotenv>=1.1,<2
+python-dotenv>=1.2.2,<2
 tzdata>=2025.2
 cryptography>=46,<47
 simple-websocket>=1.1,<2
