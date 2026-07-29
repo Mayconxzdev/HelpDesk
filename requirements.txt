@@ -8,5 +8,5 @@ python-dotenv>=1.1,<2
 tzdata>=2025.2
 cryptography>=46,<47
 simple-websocket>=1.1,<2
-waitress>=3,<4
+waitress>=3.0.2,<4
 psycopg2-binary>=2.9.10,<3
