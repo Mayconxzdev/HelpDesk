@@ -107,6 +107,7 @@ def main() -> int:
     lock = json.loads(LOCK_FILE.read_text(encoding="utf-8"))
     packages = lock.get("packages", {})
     root = packages.get("", {})
+    overrides = package.get("overrides", {})
     failures: list[str] = []
 
     for field in ("name", "version"):
@@ -132,11 +133,13 @@ def main() -> int:
                 if parsed is None:
                     unsupported.append(f"{package_path} -> {name} ({spec})")
                     continue
-                outcome = satisfies(parsed, str(spec))
+                override = overrides.get(name)
+                effective_spec = str(override) if isinstance(override, str) else str(spec)
+                outcome = satisfies(parsed, effective_spec)
                 checked += 1
                 if outcome is False:
                     failures.append(
-                        f"incompatible lock: {package_path} requires {name} {spec}, locked {installed}"
+                        f"incompatible lock: {package_path} requires {name} {effective_spec}, locked {installed}"
                     )
                 elif outcome is None:
                     unsupported.append(f"{package_path} -> {name} ({spec})")

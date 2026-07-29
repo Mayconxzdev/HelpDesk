@@ -15,6 +15,9 @@
     "electron": "^30.0.0",
     "electron-builder": "^26.15.3"
   },
+  "overrides": {
+    "es-define-property": "1.0.1"
+  },
   "build": {
     "appId": "dev.maycon.helpdesk",
     "productName": "HelpDesk & IT Operations",
