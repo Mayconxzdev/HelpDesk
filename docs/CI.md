@@ -15,7 +15,12 @@ O workflow `.github/workflows/ci.yml` possui dois jobs independentes.
 
 ### Electron
 
-- instala o lockfile com `npm ci --ignore-scripts`;
+Os testes do job Electron usam apenas o Node.js e arquivos locais. O CI não baixa binários do Electron nem gera instaladores; empacotamento desktop deve ser validado em um workflow de release separado.
+
+
+- instala a árvore bloqueada com scripts de pós-instalação desativados;
+- valida o manifesto e a consistência do lockfile;
+- executa verificações de sintaxe e contratos de segurança após validar a instalação bloqueada;
 - valida a sintaxe dos processos main, preload e utilitários;
 - executa contratos de segurança para URL, atualização e abertura de pastas.
 
@@ -31,6 +36,8 @@ O CI não gera instalador Windows nem assina binários. Essas etapas exigem um r
 pip install -r requirements-dev.txt
 python scripts/validate_public_release.py
 python scripts/check_markdown_links.py
+python scripts/check_npm_lock.py
+python -m pip check
 ruff check .
 python -m compileall -q app.py ia.py security_utils.py tests scripts
 python -m pytest -q

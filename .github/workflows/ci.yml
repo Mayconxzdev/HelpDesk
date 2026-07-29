@@ -43,6 +43,12 @@ jobs:
       - name: Validate Markdown links
         run: python scripts/check_markdown_links.py
 
+      - name: Validate npm lock metadata
+        run: python scripts/check_npm_lock.py
+
+      - name: Check installed Python dependencies
+        run: python -m pip check
+
       - name: Ruff
         run: ruff check .
 
@@ -54,7 +60,6 @@ jobs:
           APP_ENV: testing
           FLASK_SECRET_KEY: ci-only-secret-key-with-at-least-32-characters
           CREDENTIAL_ENCRYPTION_KEY: ci-only-encryption-key
-          DATABASE_URL: sqlite:///instance/helpdesk-ci.db
           ENABLE_DEMO_AUTH: "true"
           SOCKETIO_ASYNC_MODE: threading
         run: python -m pytest -q
@@ -81,5 +86,14 @@ jobs:
       - name: Install locked dependencies
         run: npm ci --ignore-scripts
 
+      - name: Inspect package manifest
+        run: npm pkg get name version scripts.check
+
       - name: Run syntax and security checks
         run: npm run check
+
+      - name: Check browser JavaScript syntax
+        working-directory: .
+        run: |
+          node --check static/estoque.js
+          node --check static/it_control.js

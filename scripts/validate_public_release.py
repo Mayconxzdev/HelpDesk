@@ -7,8 +7,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SKIP_DIRS = {".git", ".venv", "node_modules", "instance", "dist", "out", "build"}
 SKIP_FILES = {".env.example", "package-lock.json", "validate_public_release.py"}
-FORBIDDEN_NAMES = {".env", "helpdesk.db", "conversation_log.txt", "embeddings.pkl"}
-FORBIDDEN_SUFFIXES = {".db", ".sqlite", ".sqlite3", ".pkl", ".exe", ".zip", ".tar"}
+FORBIDDEN_DIRS = {"__pycache__", ".pytest_cache", ".ruff_cache"}
+FORBIDDEN_NAMES = {
+    ".env", ".DS_Store", "Thumbs.db", "Desktop.ini", "helpdesk.db",
+    "conversation_log.txt", "embeddings.pkl",
+}
+FORBIDDEN_SUFFIXES = {".db", ".sqlite", ".sqlite3", ".pkl", ".pyc", ".pyo", ".exe", ".zip", ".tar", ".gz"}
 TEXT_SUFFIXES = {
     ".py", ".js", ".json", ".md", ".html", ".css", ".yml", ".yaml",
     ".toml", ".txt", ".example", ".gitignore",
@@ -32,7 +36,11 @@ def iter_files():
 
 
 def main() -> int:
-    failures = []
+    failures: list[str] = []
+    for path in ROOT.rglob("*"):
+        if path.is_dir() and path.name in FORBIDDEN_DIRS and not any(part in SKIP_DIRS for part in path.parts):
+            failures.append(f"forbidden cache directory: {path.relative_to(ROOT)}")
+
     for path in iter_files():
         rel = path.relative_to(ROOT)
         if path.name in FORBIDDEN_NAMES or path.suffix.lower() in FORBIDDEN_SUFFIXES:
@@ -40,7 +48,7 @@ def main() -> int:
             continue
         if path.name in SKIP_FILES:
             continue
-        if path.suffix.lower() not in TEXT_SUFFIXES and path.name not in {".gitignore"}:
+        if path.suffix.lower() not in TEXT_SUFFIXES and path.name != ".gitignore":
             continue
         try:
             text = path.read_text(encoding="utf-8")

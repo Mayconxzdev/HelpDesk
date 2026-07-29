@@ -274,7 +274,7 @@ Elas existem somente para desenvolvimento e devem ser alteradas ou desabilitadas
 
 ```bash
 cd hd_electron
-npm ci
+npm install
 ```
 
 Configure o servidor antes de iniciar:
@@ -290,6 +290,8 @@ npm start
 pip install -r requirements-dev.txt
 python scripts/validate_public_release.py
 python scripts/check_markdown_links.py
+python scripts/check_npm_lock.py
+python -m pip check
 ruff check .
 python -m compileall -q app.py ia.py security_utils.py tests scripts
 python -m pytest -q

@@ -19,11 +19,30 @@ def test_all_rendered_templates_exist():
     assert missing == []
 
 
-def test_no_public_runtime_database_is_committed():
-    forbidden_suffixes = {".db", ".sqlite", ".sqlite3", ".pkl"}
-    committed = [
+def test_no_public_runtime_artifacts_are_committed():
+    forbidden_suffixes = {".db", ".sqlite", ".sqlite3", ".pkl", ".pyc", ".pyo"}
+    forbidden_directories = {"__pycache__", ".pytest_cache", ".ruff_cache"}
+    committed_files = [
         path
         for path in ROOT.rglob("*")
         if path.is_file() and path.suffix.lower() in forbidden_suffixes
     ]
-    assert committed == []
+    committed_directories = [
+        path
+        for path in ROOT.rglob("*")
+        if path.is_dir() and path.name in forbidden_directories
+    ]
+    assert committed_files == []
+    assert committed_directories == []
+
+
+def test_example_sqlite_url_does_not_duplicate_instance_directory():
+    example = (ROOT / ".env.example").read_text(encoding="utf-8")
+    assert "DATABASE_URL=sqlite:///helpdesk.db" in example
+    assert "sqlite:///instance/" not in example
+
+
+def test_ci_uses_test_owned_database_configuration():
+    workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    assert "DATABASE_URL:" not in workflow
+    assert "python -m pytest -q" in workflow

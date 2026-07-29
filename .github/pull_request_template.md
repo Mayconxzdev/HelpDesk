@@ -12,7 +12,7 @@
 - [ ] `python scripts/check_markdown_links.py`
 - [ ] `ruff check .`
 - [ ] `python -m pytest -q`
-- [ ] `cd hd_electron && npm run check`
+- [ ] `cd hd_electron && npm ci --ignore-scripts && npm run check`
 - [ ] Documentação e screenshots atualizados, quando aplicável
 
 ## Segurança e dados

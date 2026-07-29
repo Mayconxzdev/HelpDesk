@@ -159,7 +159,7 @@ Electron:
 
 ```bash
 cd hd_electron
-npm ci
+npm install
 HELPDESK_SERVER_URL=http://127.0.0.1:5000 npm start
 ```
 
@@ -168,6 +168,8 @@ HELPDESK_SERVER_URL=http://127.0.0.1:5000 npm start
 ```bash
 python scripts/validate_public_release.py
 python scripts/check_markdown_links.py
+python scripts/check_npm_lock.py
+python -m pip check
 ruff check .
 python -m compileall -q app.py ia.py security_utils.py tests scripts
 python -m pytest -q
