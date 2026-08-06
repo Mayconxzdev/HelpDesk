@@ -1,171 +1,114 @@
-<div align="center">
-
 # HelpDesk & IT Operations
 
-### Internal support, asset, access, communication and local-AI workspace
-
-[![HelpDesk CI](https://github.com/Mayconxzdev/HelpDesk/actions/workflows/ci.yml/badge.svg)](https://github.com/Mayconxzdev/HelpDesk/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/Mayconxzdev/HelpDesk/actions/workflows/codeql.yml/badge.svg)](https://github.com/Mayconxzdev/HelpDesk/actions/workflows/codeql.yml)
-![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
-![Flask](https://img.shields.io/badge/Flask-3.x-000?logo=flask&logoColor=white)
-![Electron](https://img.shields.io/badge/Electron-Desktop-47848F?logo=electron&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-22c55e)
-
-[Product case](docs/PORTFOLIO_CASE_STUDY.md) ·
-[Architecture](docs/ARCHITECTURE.md) ·
-[Project status](docs/PROJECT_STATUS.md) ·
-[CI](docs/CI.md) ·
 [Português](README.md)
 
-</div>
+Internal workspace for tickets, assets, access management, real-time communication and optional local AI.
 
----
+## Recruiter overview
 
-## Overview
+| Dimension | Evidence |
+|---|---|
+| **Real use** | The internal version is used by 11 people for tickets, assets, access management and communication. |
+| **Backend** | Flask, SQLAlchemy, sessions, APIs and Flask-SocketIO. |
+| **Desktop and real time** | Electron client with tray/notifications and Socket.IO events. |
+| **Security** | Password hashing, Fernet-encrypted fields, masking, restricted origins, sandboxed Electron and automated public-release checks. |
+| **Optional AI** | Ollama and local text retrieval; core modules continue to work without AI. |
+| **Quality** | Pytest, Ruff, Node Test Runner, CI, CodeQL and public-distribution validation. |
 
-**HelpDesk & IT Operations** combines ticket management, IT assets, operational access records, network shortcuts, real-time chat and optional local AI support in one internal workspace.
+## Problem solved
 
-The public repository is presented as a **modernisation case**. It keeps the working product, removes operational data, fixes critical security issues and documents its technical debt instead of presenting a prototype as a production-certified platform.
+Internal IT work was fragmented across messages, email and spreadsheets. HelpDesk combines:
 
-### What the project demonstrates
+- ticket creation, priority, category, history and tracking;
+- user, computer, software, certificate and maintenance inventory;
+- accounts, access, shortcuts and controlled shares;
+- real-time chat and desktop notifications;
+- auditing and optional local-AI assistance.
 
-- Flask APIs, sessions and SQLAlchemy models;
-- real-time communication with Flask-SocketIO;
-- server-rendered HTML, CSS and vanilla JavaScript;
-- an Electron desktop shell with tray and native notifications;
-- SQLite for local review and configurable PostgreSQL support;
-- encrypted operational secrets and masked API payloads;
-- optional Ollama, Redis and local contextual retrieval;
-- tests, critical lint rules, public-release checks, CI and CodeQL.
+The internal version remains active. Its capabilities are planned to move gradually into the **Portal** IT module while preserving history, traceability and access rules.
 
-> **Scope:** portfolio and technical reference implementation. It is not an ISO 9001 certification, a public SaaS product or a production-approved credential vault. See [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md).
+> This repository is a sanitized public edition. Operational data, credentials, names, internal addresses and infrastructure settings were removed or replaced.
 
-## Five-minute review path
+## Interface
 
-1. Inspect the [real interface](#real-interface).
-2. Read the [product case](docs/PORTFOLIO_CASE_STUDY.md).
-3. Review the [architecture decisions](docs/ARCHITECTURE.md).
-4. Check the [security changes](docs/SECURITY.md).
-5. Run the repository validation, Python tests and Electron checks.
+| Module portal | Authentication |
+|---|---|
+| ![Main portal](docs/portfolio/01-portal.webp) | ![Login](docs/portfolio/02-login.webp) |
 
-## Real interface
+| Ticket creation | Internal chat |
+|---|---|
+| ![Ticket creation](docs/portfolio/03-ticket.webp) | ![Internal chat](docs/portfolio/05-chat.webp) |
 
-![Module portal](docs/portfolio/01-portal.webp)
+## Current architecture
 
-<table>
-<tr><td width="50%">
-
-### Authentication
-
-![Login](docs/portfolio/02-login.webp)
-
-</td><td width="50%">
-
-### Ticket intake
-
-![Ticket intake](docs/portfolio/03-ticket.webp)
-
-</td></tr>
-<tr><td width="50%">
-
-### Managed shortcuts
-
-![Shortcuts](docs/portfolio/04-shortcuts.webp)
-
-</td><td width="50%">
-
-### Internal chat
-
-![Chat](docs/portfolio/05-chat.webp)
-
-</td></tr>
-</table>
-
-## Product journeys
-
-- **Support:** authenticate → create ticket → assign priority and owner → document actions → close with history.
-- **Asset lifecycle:** register employee → associate hardware and accounts → record maintenance and reviews → audit changes.
-- **Communication:** join authorised rooms → exchange messages and media → receive Socket.IO events and desktop notifications.
-- **Local AI:** assemble authorised inventory context → call Ollama only when enabled → use an optional local retrieval helper and Redis cache.
-
-## Architecture
-
-The current system is a Flask monolith. This keeps deployment simple for an internal tool, although `app.py` still concentrates responsibilities and is explicitly documented as technical debt.
+The application is a **Flask monolith** with business domains, APIs, templates and Socket.IO events in the same process. This keeps internal operations simple, while the large main file remains a documented technical debt.
 
 ```mermaid
 flowchart LR
-    U[User] --> WEB[Jinja + JavaScript]
+    U[User] --> WEB[Templates + JavaScript]
     DESK[Electron] --> WEB
     WEB <-->|HTTP / JSON| API[Flask]
     WEB <-->|Socket.IO| RT[Flask-SocketIO]
-    API --> AUTH[Sessions and authorisation]
-    API --> ORM[Flask-SQLAlchemy]
+    API --> AUTH[Sessions and authorization]
+    API --> ORM[SQLAlchemy]
     RT --> ORM
     ORM --> DB[(SQLite / PostgreSQL)]
-    API --> VAULT[Encrypted fields]
-    API --> OLLAMA[Optional Ollama]
+    API --> VAULT[Encrypted sensitive fields]
+    API -. optional .-> OLLAMA[Ollama]
     RAG[Optional local retrieval] --> OLLAMA
-    RAG --> REDIS[(Optional Redis)]
 ```
 
-## Security improvements in this public version
+## Relevant decisions
 
-- production secret validation and safer session cookies;
-- same-origin validation for state-changing browser requests;
-- restricted Socket.IO origins;
-- protected sensitive routes and safe post-login redirects;
+- SQLite by default for local evaluation, with PostgreSQL available by configuration;
 - Werkzeug password hashing;
-- Fernet encryption for credential-like operational fields;
-- masked secrets in normal API responses;
-- Electron sandbox, isolated context and no Node.js in the renderer;
-- removal of arbitrary executable download-and-run behaviour;
-- automated checks for private data and dangerous patterns.
+- encrypted operational fields and masked common API responses;
+- restricted Socket.IO origins;
+- Electron with `contextIsolation`, `sandbox` and `nodeIntegration: false`;
+- validated manual updates instead of downloading and executing arbitrary binaries;
+- Ollama, Redis and local retrieval are optional and do not block core modules.
 
-## Technology
+## Stack
 
-| Layer | Technology |
+| Layer | Technologies |
 |---|---|
-| Backend | Python 3.12, Flask, SQLAlchemy |
+| Backend | Python 3.12, Flask, Flask-SQLAlchemy, SQLAlchemy |
 | Real time | Flask-SocketIO, Socket.IO |
 | Frontend | Jinja2, HTML, CSS, JavaScript |
-| Data | SQLite, optional PostgreSQL |
+| Database | SQLite, optional PostgreSQL |
 | Desktop | Electron, Node.js |
-| Security | Werkzeug hashes, Fernet, security headers |
+| Security | Werkzeug hashing, Fernet, cookies and restricted origins |
 | Optional AI | Ollama, TF-IDF, scikit-learn, Redis |
 | Quality | Pytest, Ruff, Node Test Runner, CodeQL, GitHub Actions |
 
-## Local setup
+## Run locally
 
 ```bash
 git clone https://github.com/Mayconxzdev/HelpDesk.git
 cd HelpDesk
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\Activate.ps1
-cp .env.example .env       # Windows: Copy-Item .env.example .env
+```
+
+Windows PowerShell:
+
+```powershell
+.venv\Scripts\Activate.ps1
+Copy-Item .env.example .env
 pip install -r requirements-dev.txt
 python app.py
 ```
 
-Open `http://127.0.0.1:5000`.
-
-Local-only demo identities:
-
-```text
-demo_admin / change-me-local
-demo_user  / change-me-local
-```
-
-Electron:
+Electron client:
 
 ```bash
 cd hd_electron
 npm install
-HELPDESK_SERVER_URL=http://127.0.0.1:5000 npm start
 ```
 
 ## Validation
 
 ```bash
+pip install -r requirements-dev.txt
 python scripts/validate_public_release.py
 python scripts/check_markdown_links.py
 python scripts/check_npm_lock.py
@@ -173,24 +116,23 @@ python -m pip check
 ruff check .
 python -m compileall -q app.py ia.py security_utils.py tests scripts
 python -m pytest -q
-cd hd_electron && npm ci --ignore-scripts && npm run check
+
+cd hd_electron
+npm ci --ignore-scripts
+npm run check
 ```
 
 ## Known limitations
 
-- no public hosted demo;
-- the main Flask module still needs Blueprint/service extraction;
-- no complete database migration system;
-- in-memory rate limiting is process-local;
-- chat attachments are database payloads rather than object-storage records;
-- simplified role model;
-- environment-dependent PostgreSQL, Ollama and Redis integrations;
-- audit-friendly controls do not constitute ISO 9001 certification.
+- no hosted public demo;
+- `app.py` still needs separation into blueprints and services;
+- no complete database-migration framework;
+- process-local rate limiting;
+- chat files remain database payloads rather than object storage;
+- simplified permission matrix;
+- Ollama, Redis and PostgreSQL depend on the environment;
+- traceability is provided, but ISO 9001 compliance is not certified.
 
 ## Author
 
-**Maycon da Silva Ferreira** — [@Mayconxzdev](https://github.com/Mayconxzdev)
-
-## License
-
-Released under the [MIT License](LICENSE).
+**Maycon da Silva Ferreira** — product, architecture, backend, interface, desktop client, security, deployment, training and support.
