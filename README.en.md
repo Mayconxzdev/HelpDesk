@@ -2,32 +2,32 @@
 
 [Português](README.md)
 
-Internal workspace for tickets, assets, access management, real-time communication and optional local AI.
+I built HelpDesk to bring together IT work that was scattered across messages, email and spreadsheets. The internal version is used by **11 people** for tickets, assets, access management and team communication.
 
-## Recruiter overview
+## Overview
 
-| Dimension | Evidence |
+| Area | Current implementation |
 |---|---|
-| **Real use** | The internal version is used by 11 people for tickets, assets, access management and communication. |
+| **Tickets and operations** | Priority, category, history, tracking and real-time communication. |
+| **Assets and access** | Users, computers, software, certificates, maintenance, accounts and shared resources. |
 | **Backend** | Flask, SQLAlchemy, sessions, APIs and Flask-SocketIO. |
-| **Desktop and real time** | Electron client with tray/notifications and Socket.IO events. |
-| **Security** | Password hashing, Fernet-encrypted fields, masking, restricted origins, sandboxed Electron and automated public-release checks. |
+| **Desktop** | Electron client with tray, notifications and Socket.IO events. |
+| **Security** | Password hashing, Fernet-encrypted fields, masking, restricted origins and sandboxed Electron. |
 | **Optional AI** | Ollama and local text retrieval; core modules continue to work without AI. |
-| **Quality** | Pytest, Ruff, Node Test Runner, CI, CodeQL and public-distribution validation. |
+| **Quality** | Pytest, Ruff, Node Test Runner, CI, CodeQL and public-release validation. |
 
-## Problem solved
+The internal version remains active. I plan to move its capabilities gradually into the **Portal** IT module while preserving history, traceability and access rules.
 
-Internal IT work was fragmented across messages, email and spreadsheets. HelpDesk combines:
+> This repository is a sanitized public edition. Operational data, credentials, names, internal addresses and infrastructure settings were removed or replaced.
+
+## What I built
 
 - ticket creation, priority, category, history and tracking;
 - user, computer, software, certificate and maintenance inventory;
-- accounts, access, shortcuts and controlled shares;
+- account, access, shortcut and controlled-share management;
 - real-time chat and desktop notifications;
-- auditing and optional local-AI assistance.
-
-The internal version remains active. Its capabilities are planned to move gradually into the **Portal** IT module while preserving history, traceability and access rules.
-
-> This repository is a sanitized public edition. Operational data, credentials, names, internal addresses and infrastructure settings were removed or replaced.
+- audit trail;
+- optional local-AI assistance.
 
 ## Interface
 
@@ -41,7 +41,7 @@ The internal version remains active. Its capabilities are planned to move gradua
 
 ## Current architecture
 
-The application is a **Flask monolith** with business domains, APIs, templates and Socket.IO events in the same process. This keeps internal operations simple, while the large main file remains a documented technical debt.
+The application is a **Flask monolith** with business domains, APIs, templates and Socket.IO events in the same process. This keeps the internal operation simple. The large main file still concentrates responsibilities and remains documented as technical debt.
 
 ```mermaid
 flowchart LR
@@ -58,15 +58,15 @@ flowchart LR
     RAG[Optional local retrieval] --> OLLAMA
 ```
 
-## Relevant decisions
+## Engineering decisions
 
-- SQLite by default for local evaluation, with PostgreSQL available by configuration;
+- SQLite by default for local use and evaluation, with PostgreSQL available by configuration;
 - Werkzeug password hashing;
 - encrypted operational fields and masked common API responses;
 - restricted Socket.IO origins;
 - Electron with `contextIsolation`, `sandbox` and `nodeIntegration: false`;
-- validated manual updates instead of downloading and executing arbitrary binaries;
-- Ollama, Redis and local retrieval are optional and do not block core modules.
+- validated manual updates instead of executing arbitrary binaries;
+- optional Ollama, Redis and local retrieval without blocking core modules.
 
 ## Stack
 
@@ -122,16 +122,16 @@ npm ci --ignore-scripts
 npm run check
 ```
 
-## Known limitations
+## Current limits
 
 - no hosted public demo;
-- `app.py` still needs separation into blueprints and services;
+- `app.py` still needs to be separated into blueprints and services;
 - no complete database-migration framework;
 - process-local rate limiting;
 - chat files remain database payloads rather than object storage;
 - simplified permission matrix;
 - Ollama, Redis and PostgreSQL depend on the environment;
-- traceability is provided, but ISO 9001 compliance is not certified.
+- the system provides traceability but does not certify ISO 9001 compliance.
 
 ## Author
 
