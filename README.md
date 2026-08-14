@@ -10,7 +10,7 @@
 ![Flask](https://img.shields.io/badge/Flask-3.x-000?logo=flask&logoColor=white)
 ![Electron](https://img.shields.io/badge/Electron-Desktop-47848F?logo=electron&logoColor=white)
 
-[Visão do produto](docs/PORTFOLIO_CASE_STUDY.md) · [Arquitetura](docs/ARCHITECTURE.md) · [Estado](docs/PROJECT_STATUS.md) · [Segurança](docs/SECURITY.md) · [English](README.en.md)
+[Case no portfólio](https://mayconxzdev.github.io/cases/helpdesk/) · [Visão do produto](docs/PORTFOLIO_CASE_STUDY.md) · [Arquitetura](docs/ARCHITECTURE.md) · [Estado](docs/PROJECT_STATUS.md) · [Segurança](docs/SECURITY.md) · [English](README.en.md)
 
 </div>
 
@@ -145,7 +145,7 @@ npm run check
 
 ## Autor
 
-**Maycon da Silva Ferreira** — produto, arquitetura, backend, interface, cliente desktop, segurança, implantação, treinamento e sustentação.
+**Maycon Ferreira** — produto, arquitetura, backend, interface, cliente desktop, segurança, implantação, treinamento e sustentação.
 
 ## Licença
 
