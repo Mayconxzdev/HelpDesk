@@ -1,6 +1,6 @@
 # HelpDesk & IT Operations
 
-[Português](README.md)
+[Portfolio case](https://mayconxzdev.github.io/en/cases/helpdesk/) · [Português](README.md)
 
 I built HelpDesk to bring together IT work that was scattered across messages, email and spreadsheets. The internal version is used by **11 people** for tickets, assets, access management and team communication.
 
@@ -135,4 +135,4 @@ npm run check
 
 ## Author
 
-**Maycon da Silva Ferreira** — product, architecture, backend, interface, desktop client, security, deployment, training and support.
+**Maycon Ferreira** — product, architecture, backend, interface, desktop client, security, deployment, training and support.
