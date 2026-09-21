@@ -25,7 +25,7 @@ Desenvolvi o HelpDesk para reunir atividades de TI que estavam espalhadas entre 
 | **Backend** | Flask, SQLAlchemy, sessões, APIs e Flask-SocketIO. |
 | **Desktop** | Cliente Electron com tray, notificações e eventos Socket.IO. |
 | **Segurança** | Hash de senhas, Fernet para campos sensíveis, mascaramento, origem restrita e Electron em sandbox. |
-| **IA opcional** | Ollama e recuperação textual local; os módulos principais continuam funcionando sem IA. |
+| **IA e agente operacional** | Ollama/recuperação textual local e agente interno que monitora contexto de estações, mudanças e vencimentos para enriquecer o atendimento; os módulos principais continuam funcionando sem IA. |
 | **Qualidade** | Pytest, Ruff, Node Test Runner, CI, CodeQL e validação da versão pública. |
 
 A versão interna continua ativa. Planejo incorporar suas capacidades gradualmente ao módulo de TI do **Portal**, preservando histórico, rastreabilidade e regras de acesso.
@@ -39,7 +39,8 @@ A versão interna continua ativa. Planejo incorporar suas capacidades gradualmen
 - gestão de contas, acessos, atalhos e compartilhamentos;
 - chat em tempo real e notificações no cliente desktop;
 - trilha de auditoria;
-- assistência local de IA quando habilitada.
+- assistência local de IA quando habilitada;
+- agente operacional que cruza inventário da estação, contexto do chamado e informações de certificados/alterações para enviar alertas e acelerar o diagnóstico; a operação interna usa inventário coletado por ferramenta dedicada, sem publicar dados reais.
 
 ## Interface
 
@@ -68,6 +69,8 @@ flowchart LR
     API --> VAULT[Cifra de campos sensíveis]
     API -. opcional .-> OLLAMA[Ollama]
     RAG[Busca local opcional] --> OLLAMA
+    AGENT[Agente operacional / inventário] --> API
+    AGENT --> ALERTS[Alertas e contexto do chamado]
 ```
 
 ## Decisões técnicas
@@ -78,7 +81,8 @@ flowchart LR
 - Socket.IO com origem restrita;
 - Electron com `contextIsolation`, `sandbox` e `nodeIntegration: false`;
 - atualização manual validada, sem executar binários arbitrários;
-- Ollama, Redis e recuperação local opcionais, sem bloquear os módulos principais.
+- Ollama, Redis e recuperação local opcionais, sem bloquear os módulos principais;
+- a versão interna recebe contexto de inventário de estações e vencimentos para apoiar chamados e alertas; a edição pública mantém apenas a arquitetura sanitizada.
 
 ## Stack
 
