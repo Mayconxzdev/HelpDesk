@@ -2,7 +2,7 @@
 
 [Portfolio case](https://mayconxzdev.github.io/en/cases/helpdesk/) · [Português](README.md)
 
-I built HelpDesk to bring together IT work that was scattered across messages, email and spreadsheets. The internal version is used by **11 people** for tickets, assets, access management and team communication.
+I built HelpDesk to bring together IT work that was scattered across messages, email and spreadsheets. The internal version supports ticket handling, asset lookup, access organization and team communication.
 
 ## Overview
 
