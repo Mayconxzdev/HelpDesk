@@ -16,7 +16,7 @@
 
 ## Visão geral
 
-Desenvolvi o HelpDesk para reunir atividades de TI que estavam espalhadas entre mensagens, e-mails e planilhas. A versão interna é utilizada por **11 pessoas** para abrir e acompanhar chamados, consultar ativos, organizar acessos e se comunicar com a equipe responsável.
+Desenvolvi o HelpDesk para reunir atividades de TI que estavam espalhadas entre mensagens, e-mails e planilhas. A versão interna apoia a abertura e o acompanhamento de chamados, a consulta de ativos, a organização de acessos e a comunicação com a equipe responsável.
 
 | Área | Implementação atual |
 |---|---|
